@@ -87,6 +87,8 @@ document.addEventListener('DOMContentLoaded', function() {
       // Show attendee form link
       const attendeeFormUrl = `feedback-form-User.html?event=${encodeURIComponent(eventTitle)}`;
       output.innerHTML += `\n\n<a href="${attendeeFormUrl}" target="_blank" class="text-blue-600 underline">Open attendee feedback form</a>`;
+      const qrUrl = `qr.html?event=${encodeURIComponent(eventTitle)}`;
+      output.innerHTML += `<br/><a href="${qrUrl}" target="_blank" class="text-green-600 underline">Open QR code for this event</a>`;
     })
     .catch((error) => {
       output.classList.remove("hidden");
