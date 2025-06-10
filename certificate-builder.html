@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Certificate Builder</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/styles/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/konva@9.2.0/konva.min.js"></script>
+</head>
+<body class="flex flex-row min-h-screen bg-gradient-to-tr from-[#000000] from-35% to-[#00691c]">
+  <!-- Sidebar -->
+  <div class="glass flex flex-col justify-between p-8 mt-8 ml-8 max-w-xs rounded-xl h-[90vh]">
+    <div>
+      <div class="mb-10">
+        <img src="/images/inttoLogo.png" alt="into logo" class="w-32 h-auto">
+        <div class="text-xs text-white mt-2 ml-1">Innovation & Technology Transfer Office</div>
+      </div>
+      <div class="flex flex-col gap-6 mt-16">
+        <button class="glass-buttons text-white font-bold text-lg py-5 rounded-xl border border-[#3be382] hover:bg-[#1a1a1a] transition">Custom Form Builder</button>
+        <button class="glass-buttons text-white font-bold text-lg py-5 rounded-xl border border-[#3be382] hover:bg-[#1a1a1a] transition">Feedback Results</button>
+        <button class="glass-buttons text-white font-bold text-lg py-5 rounded-xl border border-[#3be382] hover:bg-[#1a1a1a] transition">Certificate Builder</button>
+      </div>
+    </div>
+    <div class="flex justify-center mt-8">
+      <button class="glass-buttons text-white font-bold px-8 py-2 rounded border border-[#3be382] hover:bg-[#1a1a1a] transition">
+        Log Out
+      </button>
+    </div>
+  </div>
+  <!-- Main Content -->
+  <div class="flex-1 flex items-center justify-center mx-8 my-8">
+    <div class="w-full h-full max-w-5xl max-h-[90vh] flex flex-col justify-between border border-[#3be382] rounded-2xl p-10 bg-transparent relative"
+         style="box-shadow: 0 2px 32px 0 rgba(0,0,0,0.12);">
+      <h1 class="text-center text-4xl font-extrabold mb-10 text-white">Certificate Builder</h1>
+      <div class="flex flex-col gap-8">
+        <div>
+          <label class="block font-bold text-lg mb-4 text-white">Upload Certificate Template</label>
+          <div class="flex flex-row gap-6 items-center">
+            <button id="uploadBtn" class="border border-[#3be382] rounded-full px-10 py-2 text-white font-semibold bg-transparent hover:bg-[#1a1a1a] transition">Upload</button>
+            <input type="file" id="templateUpload" accept="image/png, image/jpeg" class="hidden"/>
+            <span id="fileName" class="border border-[#3be382] rounded-xl px-8 py-2 bg-transparent text-white text-lg font-bold min-w-[260px] text-left">No File Chosen</span>
+          </div>
+        </div>
+        <div id="konvaContainer"
+          class="border border-[#3be382] rounded-xl bg-gradient-to-br from-white/5 to-[#3be382]/5 flex justify-center items-center w-full"
+          style="height: 420px;">
+          <!-- Konva canvas will be rendered here -->
+        </div>
+      </div>
+      <div class="flex justify-center mt-10">
+        <button id="savePlacementBtn" class="border border-[#3be382] rounded-xl px-8 py-3 text-white font-semibold bg-transparent hover:bg-[#1a1a1a] transition">
+          Save Placement and Send
+        </button>
+      </div>
+      <span id="saveStatus" class="text-green-400 mt-2 text-center"></span>
+    </div>
+  </div>
+  <script type="module">
+    // Custom upload button logic
+    const uploadBtn = document.getElementById('uploadBtn');
+    const templateUpload = document.getElementById('templateUpload');
+    const fileName = document.getElementById('fileName');
+    if (uploadBtn && templateUpload && fileName) {
+      uploadBtn.onclick = () => templateUpload.click();
+      templateUpload.onchange = () => {
+        fileName.textContent = templateUpload.files.length ? templateUpload.files[0].name : 'No File Chosen';
+      };
+    }
+  </script>
+  <script src="./script/certificate-builder.js" type="module"></script>
+</body>
+</html>

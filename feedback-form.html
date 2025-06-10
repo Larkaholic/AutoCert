@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Feedback Form</title>
+</head>
+<body class="min-h-screen flex items-center justify-centerbg-gradient-to-tr from-[#000000] from-35% to-[#00691c] relative overflow-hidden">
+    <!-- Decorative left shapes (optional, use an image or SVG as needed) -->
+    <div class="absolute left-0 bottom-0 top-0 flex flex-col justify-center items-center z-0">
+        <!-- You can use an <img> or SVG here to match the left-side design -->
+        <!-- Example placeholder: -->
+        <!-- <img src="/images/left-shapes.png" class="h-[60vh] opacity-80" /> -->
+    </div>
+    <div class="w-full flex flex-col items-center z-10">
+        <!-- Logo -->
+        <div class="flex flex-col items-center mt-8 mb-4">
+            <img src="/images/inttoLogo.png" alt="INTO Logo" class="w-40 mb-2">
+            <div class="text-xs text-white/80 font-light">Innovation & Technology Transfer Office</div>
+        </div>
+        <!-- Feedback Form Card -->
+        <div class="mx-auto w-full max-w-xl bg-white/5 backdrop-blur-md border border-[#3be382] rounded-2xl p-10 shadow-lg flex flex-col items-center">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-white mb-8 text-center">Feedback Form</h1>
+            <form id="dynamicFeedbackForm" class="w-full flex flex-col gap-6">
+                <!-- Dynamically generated fields will go here -->
+            </form>
+            <div class="flex justify-center mt-8 w-full">
+                <button type="submit" form="dynamicFeedbackForm"
+                    class="w-1/3 border border-[#3be382] rounded-xl px-8 py-2 text-white font-semibold bg-transparent hover:bg-[#1a1a1a] transition text-lg">
+                    Submit
+                </button>
+            </div>
+        </div>
+    </div>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script type="module" src="./script/firebase.js"></script>
+    <script type="module" src="./script/feedback-from.js"></script>
+    <script>
+        // Style the dynamically generated fields to match the design
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new MutationObserver(() => {
+                document.querySelectorAll('#dynamicFeedbackForm input, #dynamicFeedbackForm select, #dynamicFeedbackForm textarea').forEach(el => {
+                    el.className =
+                        'w-full px-4 py-2 bg-transparent border border-[#3be382] rounded-xl text-white placeholder-white/70 focus:outline-none focus:border-[#3be382] text-lg';
+                });
+                document.querySelectorAll('#dynamicFeedbackForm label').forEach(el => {
+                    el.className = 'block text-white font-semibold mb-2 text-lg';
+                });
+            });
+            observer.observe(document.getElementById('dynamicFeedbackForm'), { childList: true, subtree: true });
+        });
+    </script>
+</body>
+</html>
