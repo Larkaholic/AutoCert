@@ -13,7 +13,6 @@ document.addEventListener('DOMContentLoaded', function() {
         qrUrl = `https://${location.host}/feedback-form-User.html?event=${encodeURIComponent(event)}`;
     }
 
-    // Find the container where the URL will be rendered
     const qrContainer = document.getElementById('qrcode');
 
     if (qrContainer) {
