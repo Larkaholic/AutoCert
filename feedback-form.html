@@ -6,12 +6,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <title>Feedback Form</title>
 </head>
-<body class="min-h-screen flex items-center justify-centerbg-gradient-to-tr from-[#000000] from-35% to-[#00691c] relative overflow-hidden">
-    <!-- Decorative left shapes (optional, use an image or SVG as needed) -->
+<body class="min-h-screen flex items-center justify-center bg-gradient-to-tr from-[#000000] from-35% to-[#00691c] relative overflow-hidden">
     <div class="absolute left-0 bottom-0 top-0 flex flex-col justify-center items-center z-0">
-        <!-- You can use an <img> or SVG here to match the left-side design -->
-        <!-- Example placeholder: -->
-        <!-- <img src="/images/left-shapes.png" class="h-[60vh] opacity-80" /> -->
     </div>
     <div class="w-full flex flex-col items-center z-10">
         <!-- Logo -->
@@ -38,7 +34,6 @@
     <script type="module" src="./script/firebase.js"></script>
     <script type="module" src="./script/feedback-from.js"></script>
     <script>
-        // Style the dynamically generated fields to match the design
         document.addEventListener('DOMContentLoaded', () => {
             const observer = new MutationObserver(() => {
                 document.querySelectorAll('#dynamicFeedbackForm input, #dynamicFeedbackForm select, #dynamicFeedbackForm textarea').forEach(el => {
