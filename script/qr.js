@@ -16,9 +16,10 @@ document.addEventListener('DOMContentLoaded', function() {
     const qrContainer = document.getElementById('qrcode');
 
     if (qrContainer) {
-        qrContainer.textContent = "Loading shortened URL...";
-        qrContainer.className = "text-3xl font-bold";
-
+        // Remove any text and generate the QR code with the URL
+        qrContainer.textContent = "";
+        qrContainer.className = "w-full h-full mb-8 rounded-xl border-2 bg-gray-200 border-gray-300 flex items-center justify-center";
+        // Optionally, use CleanURI to shorten the URL before generating the QR code
         fetch('https://cleanuri.com/api/v1/shorten', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -26,16 +27,19 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(response => response.json())
         .then(data => {
-            if (data.result_url) {
-                qrContainer.textContent = data.result_url;
-            } else if (data.error) {
-                qrContainer.textContent = `Shortening failed: ${data.error}`;
-            } else {
-                qrContainer.textContent = qrUrl;
-            }
+            let urlForQR = data.result_url || qrUrl;
+            new QRCode(qrContainer, {
+                text: urlForQR,
+                width: 256,
+                height: 256
+            });
         })
         .catch(() => {
-            qrContainer.textContent = qrUrl;
+            new QRCode(qrContainer, {
+                text: qrUrl,
+                width: 256,
+                height: 256
+            });
         });
     }
 });
