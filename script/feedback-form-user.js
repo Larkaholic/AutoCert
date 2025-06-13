@@ -1,4 +1,4 @@
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-app.js";
   import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-analytics.js";
   import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-firestore.js";
 
@@ -53,18 +53,20 @@
     }
 
     form.innerHTML = questions.map((question, index) => `
-      <div class="mb-4">
-        <label for="question${index}" class="block text-lg font-semibold mb-2">${question}</label>
+      <div class="mb-6">
+        <label for="question${index}" class="block text-white text-lg font-semibold mb-3">${question}</label>
         <input 
           type="text" 
           id="question${index}" 
           name="question${index}" 
-          class="w-full border rounded px-3 py-2 text-base" 
+          class="w-full bg-black/30 border border-[#6ee7b7] rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6ee7b7]" 
           required>
       </div>
     `).join('') + `
-      <button type="submit" class="mt-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-        Submit
-      </button>
+      <div class="flex justify-center mt-8">
+        <button type="submit" class="w-72 h-16 rounded-xl border border-[#6ee7b7] text-white text-lg font-semibold transition hover:bg-[#134e2f]/30 focus:outline-none">
+          Submit
+        </button>
+      </div>
     `;
   }

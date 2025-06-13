@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="./src/output.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/styles/styles.css">
     <script type="module" src="/script/feedback-form-user.js"></script>
     <title>User Feedback Form</title>
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen bg-white">
-    <div class="text-3xl font-bold mb-12 text-gray-800 text-center" id="formTitle">
+<body class="flex flex-col items-center justify-center min-h-screen bg-gradient-to-tr from-[#000000] from-35% to-[#00691c]">
+    <div class="text-3xl font-bold mb-12 text-white text-center" id="formTitle">
         Feedback Form
     </div>
     <div class="w-full max-w-xl">
-        <div class="bg-gray-300 rounded-xl shadow-lg p-8 w-full max-w-xl mx-auto">
+        <div class="glass rounded-xl shadow-lg p-8 w-full max-w-xl mx-auto">
             <form class="space-y-8" id="user-feedback-form">
                 <!-- Name and Email fields will be inserted here by JS -->
             </form>
