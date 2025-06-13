@@ -54,14 +54,13 @@ document.addEventListener('DOMContentLoaded', function() {
       alert("Please enter an event title before saving.");
       return;
     }
-    
+
     const questionDivs = form.querySelectorAll('div');
     const questions = [];
-    
+
     questionDivs.forEach(div => {
       const input = div.querySelector('input[name="question"]');
       const select = div.querySelector('select[name="type"]');
-      
       if (input && input.value.trim()) {
         questions.push({
           text: input.value.trim(),
@@ -70,25 +69,19 @@ document.addEventListener('DOMContentLoaded', function() {
         });
       }
     });
-    
+
     if (questions.length === 0) {
       alert("Please add at least one question.");
       return;
     }
-    
+
     // Save to Firebase
     db.collection("events").doc(eventTitle).set({
       questions: questions
     }, { merge: true })
     .then(() => {
-      output.classList.remove("hidden");
-      output.textContent = JSON.stringify(questions, null, 2) + "\n\nQuestions saved to Firebase!";
-      
-      // Show attendee form link
-      const attendeeFormUrl = `feedback-form-User.html?event=${encodeURIComponent(eventTitle)}`;
-      output.innerHTML += `\n\n<a href="${attendeeFormUrl}" target="_blank" class="text-blue-600 underline">Open attendee feedback form</a>`;
-      const qrUrl = `qr.html?event=${encodeURIComponent(eventTitle)}`;
-      output.innerHTML += `<br/><a href="${qrUrl}" target="_blank" class="text-green-600 underline">Open QR code for this event</a>`;
+      // Redirect to certificate builder after saving
+      window.location.href = `certificate-builder.html?event=${encodeURIComponent(eventTitle)}`;
     })
     .catch((error) => {
       output.classList.remove("hidden");

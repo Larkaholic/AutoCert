@@ -2,7 +2,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.0/firebas
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-analytics.js";
 import { getFirestore, doc, getDoc, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.9.0/firebase-firestore.js";
 
-// Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyC92G1LybSWu3463j1Wi0yjZaTzuiHcIMk",
   authDomain: "autocert-8319d.firebaseapp.com",
@@ -13,7 +12,6 @@ const firebaseConfig = {
   measurementId: "G-Q7Z8VF2N2W"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const db = getFirestore(app);
@@ -132,7 +130,6 @@ function renderQuestionsForm(questions) {
         }
 
         if (qType === "rating") {
-          // Render stars for rating
           return `
             <div class="mb-6">
               <label class="block text-white text-lg font-semibold mb-3">${qText}</label>
@@ -147,7 +144,6 @@ function renderQuestionsForm(questions) {
             </div>
           `;
         } else {
-          // Render text input
           return `
             <div class="mb-6">
               <label for="question${index}" class="block text-white text-lg font-semibold mb-3">
@@ -219,7 +215,25 @@ async function handleFormSubmit(event) {
     submitButton.textContent = 'Submitting...';
     submitButton.disabled = true;
     const docRef = await addDoc(collection(db, "certificates"), userData);
-    window.location.href = `certificate.html?id=${docRef.id}`;
+
+    // Fetch the certificate image URL from Firestore (assume stored in event doc as 'certificateUrl')
+    let certificateUrl = '';
+    try {
+      const eventRef = doc(db, "events", eventName);
+      const eventSnap = await getDoc(eventRef);
+      certificateUrl = eventSnap.exists() && eventSnap.data().certificateUrl
+        ? eventSnap.data().certificateUrl
+        : '';
+    } catch (e) {
+      certificateUrl = '';
+    }
+
+    // Show modal with download button
+    showCertificateModal(certificateUrl || 'certificate-default.png');
+
+    // Optionally, reset form or hide it
+    form.reset();
+    form.classList.add('hidden');
   } catch (error) {
     alert("An error occurred. Please try again.");
     const submitButton = form.querySelector('button[type="submit"]');
@@ -227,5 +241,76 @@ async function handleFormSubmit(event) {
       submitButton.textContent = "Submit";
       submitButton.disabled = false;
     }
+  }
+}
+
+// Add this function to show the modal
+function showCertificateModal(certificateUrl) {
+  // Create modal if not present
+  let modal = document.getElementById('certificateReadyModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'certificateReadyModal';
+    modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60';
+    modal.innerHTML = `
+      <div class="bg-white rounded-xl p-8 flex flex-col items-center max-w-md w-full">
+        <div class="text-2xl font-bold mb-4 text-[#00691c]">Your certificate is ready</div>
+        <button id="downloadCertBtn" class="mb-4 px-6 py-2 rounded bg-[#232b2b] text-white border border-[#3be382] hover:bg-[#1a1a1a]">Download Certificate</button>
+        <button id="closeCertModalBtn" class="px-4 py-2 rounded bg-gray-200 text-gray-800 hover:bg-gray-300">Close</button>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  } else {
+    modal.classList.remove('hidden');
+  }
+
+  // Download button logic
+  const downloadBtn = document.getElementById('downloadCertBtn');
+  if (downloadBtn) {
+    downloadBtn.onclick = () => {
+      if (!certificateUrl) {
+        alert("Certificate image not available.");
+        return;
+      }
+      // Draw the certificate with the user's name
+      const userName = userInfo.name || "Participant";
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = function() {
+        // Adjust canvas size to match certificate image
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+
+        // Draw the name (adjust position/font as needed)
+        ctx.font = `bold ${Math.floor(canvas.width/18)}px Montserrat, Arial, sans-serif`;
+        ctx.fillStyle = "#1a2a3a";
+        ctx.textAlign = "center";
+        // Move the name a little higher (e.g., 48% instead of 55%)
+        ctx.fillText(userName, canvas.width / 2, canvas.height * 0.51);
+
+        // Download the result
+        const a = document.createElement('a');
+        a.href = canvas.toDataURL("image/png");
+        a.download = 'certificate.png';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      };
+      img.onerror = function() {
+        alert("Failed to load certificate image.");
+      };
+      img.src = certificateUrl;
+    };
+  }
+
+  // Close button logic
+  const closeBtn = document.getElementById('closeCertModalBtn');
+  if (closeBtn) {
+    closeBtn.onclick = () => {
+      modal.classList.add('hidden');
+    };
   }
 }
