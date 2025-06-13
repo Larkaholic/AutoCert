@@ -13,12 +13,38 @@
         Feedback Form
     </div>
     <div class="w-full max-w-xl">
-        <div class="glass rounded-xl shadow-lg p-8 w-full max-w-xl mx-auto">
-            <form class="space-y-8" id="user-feedback-form">
-                <!-- Name and Email fields will be inserted here by JS -->
-            </form>
+        <div class="glass rounded-xl shadow-lg p-8 w-full max-w-xl mx-auto h-full custom-scrollbar">
+            <div id="user-info-form-container">
+                <form class="space-y-8" id="user-info-form">
+                    <!-- Name and Email fields will be inserted here -->
+                </form>
+            </div>
+            <div id="questions-form-container" class="hidden maxh-full overflow-y-auto custom-scrollbar">
+                <form class="space-y-8 h-full" id="user-questions-form">
+                    <!-- Questions fields will be inserted here -->
+                </form>
+            </div>
         </div>
     </div>
    
 </body>
 </html>
+<style>
+/* Modern dark scrollbar styles */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #6ee7b7 #232b2b;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #6ee7b7;
+  border-radius: 8px;
+  border: 2px solid #232b2b;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+</style>

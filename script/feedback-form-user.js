@@ -50,11 +50,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Render the user info form (step 1)
 function renderUserInfoForm() {
-  const form = document.getElementById('user-feedback-form');
-  if (!form) {
-    console.warn("Form with id 'user-feedback-form' not found.");
-    return;
-  }
+  const infoContainer = document.getElementById('user-info-form-container');
+  const questionsContainer = document.getElementById('questions-form-container');
+  if (!infoContainer) return;
+
+  // Show info form, hide questions form
+  infoContainer.classList.remove('hidden');
+  if (questionsContainer) questionsContainer.classList.add('hidden');
+
+  const form = document.getElementById('user-info-form');
+  if (!form) return;
 
   form.innerHTML = `
     <div class="mb-6">
@@ -82,52 +87,83 @@ function renderUserInfoForm() {
     </div>
   `;
 
-  // Add next button event listener
-  document.getElementById('nextButton').addEventListener('click', handleUserInfoNext);
+  document.getElementById('nextButton').onclick = handleUserInfoNext;
 }
 
 // Handle "Next" button click on user info form
 function handleUserInfoNext() {
   const nameInput = document.getElementById('userName');
   const emailInput = document.getElementById('userEmail');
-  
-  // Basic validation
   if (!nameInput.value || !emailInput.value) {
     alert("Please fill out all fields");
     return;
   }
-  
-  // Store user info
   userInfo = {
     name: nameInput.value,
     email: emailInput.value
   };
-  
-  // Show feedback questions form
   renderQuestionsForm(eventQuestions);
 }
 
 // Render feedback questions form (step 2)
 function renderQuestionsForm(questions) {
-  const form = document.getElementById('user-feedback-form');
-  if (!form) {
-    console.warn("Form with id 'user-feedback-form' not found.");
-    return;
-  }
+  const infoContainer = document.getElementById('user-info-form-container');
+  const questionsContainer = document.getElementById('questions-form-container');
+  if (!questionsContainer) return;
+
+  // Hide info form, show questions form
+  if (infoContainer) infoContainer.classList.add('hidden');
+  questionsContainer.classList.remove('hidden');
+
+  const form = document.getElementById('user-questions-form');
+  if (!form) return;
 
   form.innerHTML = `
     <h2 class="text-white text-xl font-bold mb-6">Feedback for ${userInfo.name}</h2>
-    ${questions.map((question, index) => `
-      <div class="mb-6">
-        <label for="question${index}" class="block text-white text-lg font-semibold mb-3">${question}</label>
-        <input 
-          type="text" 
-          id="question${index}" 
-          name="question${index}" 
-          class="w-full bg-black/30 border border-[#6ee7b7] rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6ee7b7]" 
-          required>
-      </div>
-    `).join('')}
+    <div class="overflow-y-auto max-h-[60vh]">
+      ${questions.map((question, index) => {
+        let qText = "";
+        let qType = "text";
+        if (typeof question === "object" && question !== null) {
+          qText = question.text || question.label || question.question || "";
+          qType = question.type || "text";
+        } else {
+          qText = question;
+        }
+
+        if (qType === "rating") {
+          // Render stars for rating
+          return `
+            <div class="mb-6">
+              <label class="block text-white text-lg font-semibold mb-3">${qText}</label>
+              <div class="flex items-center justify-center gap-3" id="rating-stars-${index}">
+                ${[1,2,3,4,5].map(i => `
+                  <svg data-value="${i}" class="star w-8 h-8 cursor-pointer text-gray-400 hover:text-yellow-400 transition-colors mx-1" fill="currentColor" viewBox="0 0 20 20">
+                    <polygon points="10,1 12.59,7.36 19.51,7.64 14,12.14 15.82,18.99 10,15.27 4.18,18.99 6,12.14 0.49,7.64 7.41,7.36"/>
+                  </svg>
+                `).join('')}
+                <input type="hidden" id="question${index}" name="question${index}" required>
+              </div>
+            </div>
+          `;
+        } else {
+          // Render text input
+          return `
+            <div class="mb-6">
+              <label for="question${index}" class="block text-white text-lg font-semibold mb-3">
+                ${qText}
+              </label>
+              <input 
+                type="text" 
+                id="question${index}" 
+                name="question${index}" 
+                class="w-full bg-black/30 border border-[#6ee7b7] rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6ee7b7]" 
+                required>
+            </div>
+          `;
+        }
+      }).join('')}
+    </div>
     <div class="flex justify-center mt-8">
       <button type="submit" class="w-72 h-16 rounded-xl border border-[#6ee7b7] text-white text-lg font-semibold transition hover:bg-[#134e2f]/30 focus:outline-none">
         Submit
@@ -135,20 +171,36 @@ function renderQuestionsForm(questions) {
     </div>
   `;
 
-  // Add form submission event listener
-  form.addEventListener('submit', handleFormSubmit);
+  // Add star rating event listeners
+  questions.forEach((question, index) => {
+    let qType = typeof question === "object" && question !== null ? question.type || "text" : "text";
+    if (qType === "rating") {
+      const stars = form.querySelectorAll(`#rating-stars-${index} .star`);
+      const hiddenInput = form.querySelector(`#question${index}`);
+      stars.forEach((star, i) => {
+        star.addEventListener('click', () => {
+          // Set value
+          hiddenInput.value = i + 1;
+          // Highlight stars
+          stars.forEach((s, j) => {
+            s.classList.toggle('text-yellow-400', j <= i);
+            s.classList.toggle('text-gray-400', j > i);
+          });
+        });
+      });
+    }
+  });
+
+  form.onsubmit = handleFormSubmit;
 }
 
 // Handle form submission
 async function handleFormSubmit(event) {
   event.preventDefault();
-  
   const form = event.target;
   const formData = new FormData(form);
   const params = new URLSearchParams(window.location.search);
   const eventName = params.get('event');
-  
-  // Create data object with stored user info and form responses
   const userData = {
     name: userInfo.name,
     email: userInfo.email,
@@ -156,34 +208,24 @@ async function handleFormSubmit(event) {
     timestamp: serverTimestamp(),
     responses: {}
   };
-
-  // Add question responses
   for (const [name, value] of formData.entries()) {
     if (name.startsWith('question')) {
       userData.responses[name] = value;
     }
   }
-
   try {
-    // Show loading state
     const submitButton = form.querySelector('button[type="submit"]');
     const originalText = submitButton.textContent;
     submitButton.textContent = 'Submitting...';
     submitButton.disabled = true;
-
-    // Save data to Firestore
     const docRef = await addDoc(collection(db, "certificates"), userData);
-    console.log("Document written with ID: ", docRef.id);
-    
-    // Redirect to success page with the certificate ID
     window.location.href = `certificate.html?id=${docRef.id}`;
-    
   } catch (error) {
-    console.error("Error adding document: ", error);
     alert("An error occurred. Please try again.");
-    
-    // Reset button
-    submitButton.textContent = originalText;
-    submitButton.disabled = false;
+    const submitButton = form.querySelector('button[type="submit"]');
+    if (submitButton) {
+      submitButton.textContent = "Submit";
+      submitButton.disabled = false;
+    }
   }
 }
