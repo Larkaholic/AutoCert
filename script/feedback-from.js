@@ -1,6 +1,5 @@
 import { app } from "./firebase.js";
 
-// Initialize Firestore using the global firebase object from CDN
 const db = firebase.firestore();
 
 const eventSelect = document.getElementById("eventSelect");
@@ -11,12 +10,10 @@ async function populateEventDropdown() {
     eventSelect.innerHTML = '<option value="">-- Choose an event --</option>';
     try {
         const snapshot = await db.collection("events").get();
-        console.log("Total events found:", snapshot.size);
         if (snapshot.empty) {
-            console.log("No events found in Firestore.");
+            return;
         }
         snapshot.forEach(doc => {
-            console.log("Found event:", doc.id); // Debug log
             const option = document.createElement("option");
             option.value = doc.id;
             option.textContent = doc.id;
@@ -34,7 +31,6 @@ async function renderQuestions(eventId) {
     try {
         const doc = await db.collection("events").doc(eventId).get();
         if (!doc.exists) {
-            console.log("No event found for:", eventId);
             return;
         }
         const data = doc.data();

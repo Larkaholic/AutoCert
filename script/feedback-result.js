@@ -1,6 +1,5 @@
 import { app } from "./firebase.js";
 
-// Initialize Firestore using the global firebase object from CDN
 const db = firebase.firestore();
 
 const eventSelect = document.getElementById("eventSelect");
