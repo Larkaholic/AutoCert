@@ -17,12 +17,13 @@ const analytics = getAnalytics(app);
 const db = getFirestore(app);
 
 let eventQuestions = [];
-let userInfo = {};
+let eventName = '';
+let userData = {};
 
 // Load event questions on page load
 document.addEventListener('DOMContentLoaded', async () => {
   const params = new URLSearchParams(window.location.search);
-  const eventName = params.get('event');
+  eventName = params.get('event');
 
   if (!eventName) {
     console.warn("No 'event' parameter found in URL.");
@@ -38,15 +39,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    const { questions = [] } = eventSnap.data();
-    eventQuestions = questions; // Store questions globally
-    renderUserInfoForm(); // Show user info form first
+    eventQuestions = eventSnap.data().questions || [];
+    console.log("Fetched event questions:", eventQuestions);
+    logQuestionsStructure();
+    renderUserInfoForm();
   } catch (error) {
     console.error("Error fetching event questions:", error);
   }
 });
 
-// Render the user info form (step 1)
+// Render the user info collection form (step 1)
 function renderUserInfoForm() {
   const infoContainer = document.getElementById('user-info-form-container');
   const questionsContainer = document.getElementById('questions-form-container');
@@ -60,47 +62,66 @@ function renderUserInfoForm() {
   if (!form) return;
 
   form.innerHTML = `
-    <div class="mb-6">
-      <label for="userName" class="block text-white text-lg font-semibold mb-3">Full Name</label>
-      <input 
-        type="text" 
-        id="userName" 
-        name="userName" 
-        class="w-full bg-black/30 border border-[#6ee7b7] rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6ee7b7]" 
-        required>
-    </div>
-    <div class="mb-6">
-      <label for="userEmail" class="block text-white text-lg font-semibold mb-3">Email Address</label>
-      <input 
-        type="email" 
-        id="userEmail" 
-        name="userEmail" 
-        class="w-full bg-black/30 border border-[#6ee7b7] rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#6ee7b7]" 
-        required>
-    </div>
-    <div class="flex justify-center mt-8">
-      <button type="button" id="nextButton" class="w-72 h-16 rounded-xl border border-[#6ee7b7] text-white text-lg font-semibold transition hover:bg-[#134e2f]/30 focus:outline-none">
-        Next
-      </button>
+    <div class="max-w-md mx-auto bg-[#232b2a]/80 rounded-lg p-8 border border-[#6ee7b7]/30">
+      <h2 class="text-white text-2xl font-bold mb-8 text-center">Feedback Form</h2>
+      <div class="mb-6">
+        <label for="userName" class="text-white text-sm mb-1 block">Name:</label>
+        <input 
+          type="text" 
+          id="userName" 
+          name="userName" 
+          class="w-full bg-[#2a3635] border border-[#6ee7b7]/40 rounded-md px-4 py-2 text-white focus:outline-none focus:border-[#6ee7b7]" 
+          required>
+      </div>
+      <div class="mb-10">
+        <label for="userEmail" class="text-white text-sm mb-1 block">Email:</label>
+        <input 
+          type="email" 
+          id="userEmail" 
+          name="userEmail" 
+          class="w-full bg-[#2a3635] border border-[#6ee7b7]/40 rounded-md px-4 py-2 text-white focus:outline-none focus:border-[#6ee7b7]" 
+          required>
+      </div>
+      <div class="flex justify-center mt-8">
+        <button type="button" id="nextButton" class="px-10 py-2 bg-transparent border border-[#6ee7b7]/60 text-white rounded-md hover:bg-[#134e2f]/30 focus:outline-none">
+          Next
+        </button>
+      </div>
     </div>
   `;
 
   document.getElementById('nextButton').onclick = handleUserInfoNext;
 }
 
-// Handle "Next" button click on user info form
-function handleUserInfoNext() {
+// Handle user info submission and transition to feedback questions
+function handleUserInfoSubmit() {
   const nameInput = document.getElementById('userName');
   const emailInput = document.getElementById('userEmail');
-  if (!nameInput.value || !emailInput.value) {
-    alert("Please fill out all fields");
+  if (!nameInput.value.trim()) {
+    alert("Please enter your name");
+    return;
+  }
+  
+  if (!emailInput.value.trim()) {
+    alert("Please enter your email");
     return;
   }
   userInfo = {
     name: nameInput.value,
     email: emailInput.value
+  
+  // Store user data
+  userData = {
+    name: nameInput.value.trim(),
+    email: emailInput.value.trim(),
+    eventName: eventName,
+    timestamp: serverTimestamp(),
+    responses: {}
   };
   renderQuestionsForm(eventQuestions);
+  
+  // Show feedback questions
+  renderFeedbackForm();
 }
 
 // Render feedback questions form (step 2)
@@ -116,6 +137,30 @@ function renderQuestionsForm(questions) {
   const form = document.getElementById('user-questions-form');
   if (!form) return;
 
+// Render the feedback questions (step 2)
+function renderFeedbackForm() {
+  const form = document.getElementById('user-feedback-form');
+  
+  // Check if we have questions
+  if (!eventQuestions.length) {
+    form.innerHTML = `
+      <div class="max-w-md mx-auto bg-[#232b2a]/80 rounded-lg p-8 border border-[#6ee7b7]/30">
+        <h2 class="text-white text-2xl font-bold mb-8 text-center">Feedback Form</h2>
+        <div class="text-white text-center p-4">
+          <p class="text-lg">No feedback questions found for this event.</p>
+        </div>
+        <div class="flex justify-center mt-8">
+          <button type="button" id="submitEmptyButton" class="px-10 py-2 bg-transparent border border-[#6ee7b7]/60 text-white rounded-md hover:bg-[#134e2f]/30 focus:outline-none">
+            Submit
+          </button>
+        </div>
+      </div>
+    `;
+    document.getElementById('submitEmptyButton').addEventListener('click', handleEmptySubmit);
+    return;
+  }
+  
+  // Render all questions with matching design
   form.innerHTML = `
     <h2 class="text-white text-xl font-bold mb-6">Feedback for ${userInfo.name}</h2>
     <div class="overflow-y-auto max-h-[60vh]">
@@ -164,6 +209,29 @@ function renderQuestionsForm(questions) {
       <button type="submit" class="w-72 h-16 rounded-xl border border-[#6ee7b7] text-white text-lg font-semibold transition hover:bg-[#134e2f]/30 focus:outline-none">
         Submit
       </button>
+    <div class="max-w-md mx-auto bg-[#232b2a]/80 rounded-lg p-8 border border-[#6ee7b7]/30">
+      <h2 class="text-white text-2xl font-bold mb-8 text-center">Feedback Form</h2>
+      ${eventQuestions.map((question, index) => {
+        // Make sure question is a string
+        const questionText = typeof question === 'string' ? question : 
+                           (question.text || `Question ${index + 1}`);
+        
+        return `
+        <div class="mb-6">
+          <label for="question${index}" class="text-white text-sm mb-1 block">Question ${index + 1}:</label>
+          <input 
+            type="text" 
+            id="question${index}" 
+            name="question${index}" 
+            class="w-full bg-[#2a3635] border border-[#6ee7b7]/40 rounded-md px-4 py-2 text-white focus:outline-none focus:border-[#6ee7b7]" 
+            required>
+        </div>
+      `}).join('')}
+      <div class="flex justify-center mt-8">
+        <button type="submit" id="submitButton" class="px-10 py-2 bg-transparent border border-[#6ee7b7]/60 text-white rounded-md hover:bg-[#134e2f]/30 focus:outline-none">
+          Submit
+        </button>
+      </div>
     </div>
   `;
 
@@ -188,10 +256,18 @@ function renderQuestionsForm(questions) {
   });
 
   form.onsubmit = handleFormSubmit;
+  
+  // Add form submission event listener
+  form.addEventListener('submit', handleFeedbackSubmit);
 }
 
-// Handle form submission
-async function handleFormSubmit(event) {
+// Handle empty submission (no questions)
+async function handleEmptySubmit() {
+  await saveToCertificatesCollection();
+}
+
+// Handle feedback form submission
+async function handleFeedbackSubmit(event) {
   event.preventDefault();
   const form = event.target;
   const formData = new FormData(form);
@@ -204,16 +280,32 @@ async function handleFormSubmit(event) {
     timestamp: serverTimestamp(),
     responses: {}
   };
+  
+  // Add responses to user data
   for (const [name, value] of formData.entries()) {
     if (name.startsWith('question')) {
       userData.responses[name] = value;
     }
   }
+  
+  await saveToCertificatesCollection();
+}
+
+// Save collected data to Firebase
+async function saveToCertificatesCollection() {
   try {
     const submitButton = form.querySelector('button[type="submit"]');
     const originalText = submitButton.textContent;
     submitButton.textContent = 'Submitting...';
     submitButton.disabled = true;
+    // Show loading state (if button exists)
+    const submitButton = document.querySelector('#submitButton') || document.querySelector('#submitEmptyButton');
+    if (submitButton) {
+      submitButton.textContent = 'Submitting...';
+      submitButton.disabled = true;
+    }
+    
+    // Save to Firestore
     const docRef = await addDoc(collection(db, "certificates"), userData);
 
     // Fetch the certificate image URL from Firestore (assume stored in event doc as 'certificateUrl')
@@ -234,6 +326,11 @@ async function handleFormSubmit(event) {
     // Optionally, reset form or hide it
     form.reset();
     form.classList.add('hidden');
+    console.log("Document written with ID: ", docRef.id);
+    
+    // Redirect to certificate page
+    window.location.href = `certificate.html?id=${docRef.id}`;
+    
   } catch (error) {
     alert("An error occurred. Please try again.");
     const submitButton = form.querySelector('button[type="submit"]');
@@ -313,4 +410,9 @@ function showCertificateModal(certificateUrl) {
       modal.classList.add('hidden');
     };
   }
+}
+
+// For debugging purposes, add this function to inspect the question format
+function logQuestionsStructure() {
+  console.log("Questions data structure:", JSON.stringify(eventQuestions, null, 2));
 }
