@@ -1,56 +1,328 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="/styles/styles.css">
-    <script type="module" src="/script/feedback-form-user.js"></script>
-    <title>User Feedback Form</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feedback Form</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/styles/styles.css">
+  
+  <!-- First load Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  
+  <!-- Then load Konva (required for certificate generation) -->
+  <script src="https://cdn.jsdelivr.net/npm/konva@9.2.0/konva.min.js"></script>
+  
+  <!-- Finally load our certificate generator -->
+  <script src="./script/certificate-generator.js"></script>
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen bg-gradient-to-tr from-[#000000] from-35% to-[#00691c]">
-    <div class="text-3xl font-bold mb-12 text-white text-center" id="formTitle">
-        Feedback Form
+
+<body class="bg-gradient-to-tr from-[#000000] from-35% to-[#00691c] min-h-screen flex justify-center items-center p-4">
+  <div class="glass max-w-2xl w-full rounded-xl p-8 shadow-lg">
+    <div class="mb-6">
+      <img src="/images/inttoLogo.png" alt="into logo" class="h-16 w-auto">
+      <div class="text-xs text-white mt-1">Innovation & Technology Transfer Office</div>
     </div>
-    <div class="w-full max-w-xl">
-        <div class="glass rounded-xl shadow-lg p-8 w-full max-w-xl mx-auto h-full custom-scrollbar">
-            <div id="user-info-form-container">
-                <form class="space-y-8" id="user-info-form">
-                    <!-- Name and Email fields will be inserted here -->
-                </form>
-            </div>
-            <div id="questions-form-container" class="hidden maxh-full overflow-y-auto custom-scrollbar">
-                <form class="space-y-8 h-full" id="user-questions-form">
-                    <!-- Questions fields will be inserted here -->
-                </form>
-            </div>
+    
+    <h1 id="eventTitle" class="text-2xl font-bold text-white mb-6">Event Feedback Form</h1>
+    
+    <!-- Name Input Field -->
+    <div class="mb-6">
+      <label for="participantName" class="block text-white text-sm font-bold mb-2">Your Name</label>
+      <input type="text" id="participantName" class="w-full p-3 border border-gray-400 rounded-xl shadow-lg bg-transparent text-white placeholder-gray-400" placeholder="Enter your full name" required>
+    </div>
+    
+    <form id="feedbackForm" class="space-y-6">
+      <div id="questionsContainer">
+        <!-- Questions will be inserted here dynamically -->
+        <div class="flex justify-center items-center p-8">
+          <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#3be382]"></div>
         </div>
+      </div>
+      
+      <div class="flex justify-center mt-8">
+        <button type="submit" id="submitBtn" class="bg-[#232b2b] border border-[#3be382] text-white font-bold px-8 py-3 rounded-xl hover:bg-[#1a1a1a] transition">
+          Submit Feedback
+        </button>
+      </div>
+    </form>
+    
+    <!-- Thank you message (hidden initially) -->
+    <div id="thankYouMessage" class="hidden text-center">
+      <h2 class="text-2xl font-bold text-[#3be382] mb-4">Thank You!</h2>
+      <p class="text-white mb-6">Your feedback has been submitted successfully.</p>
+      <button id="downloadCertBtn" class="bg-[#232b2b] border border-[#3be382] text-white font-bold px-8 py-3 rounded-xl hover:bg-[#1a1a1a] transition">
+        Download Certificate
+      </button>
+      <p id="certStatus" class="text-sm text-white mt-2"></p>
     </div>
-    <div id="certificateReadyModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-60 hidden">
-        <div class="bg-white rounded-xl p-8 flex flex-col items-center max-w-md w-full">
-            <div class="text-2xl font-bold mb-4 text-[#00691c]">Your certificate is ready</div>
-            <button id="downloadCertBtn" class="mb-4 px-6 py-2 rounded bg-[#232b2b] text-white border border-[#3be382] hover:bg-[#1a1a1a]">Download Certificate</button>
-            <button id="closeCertModalBtn" class="px-4 py-2 rounded bg-gray-200 text-gray-800 hover:bg-gray-300">Close</button>
-        </div>
-    </div>
+
+    <!-- Hidden certificate container -->
+    <div id="certificateContainer" class="hidden"></div>
+  </div>
+
+  <script>
+    // Verify necessary dependencies are loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      if (typeof Konva === 'undefined') {
+        console.error('Konva library not loaded!');
+      } else {
+        console.log('Konva loaded successfully.');
+      }
+      
+      if (typeof CertificateGenerator === 'undefined') {
+        console.error('CertificateGenerator not loaded!');
+        
+        // Try to load it again
+        const script = document.createElement('script');
+        script.src = './script/certificate-generator.js';
+        document.head.appendChild(script);
+      } else {
+        console.log('CertificateGenerator loaded successfully.');
+      }
+    });
+  
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyC92G1LybSWu3463j1Wi0yjZaTzuiHcIMk",
+      authDomain: "autocert-8319d.firebaseapp.com",
+      projectId: "autocert-8319d",
+      storageBucket: "autocert-8319d.firebasestorage.app",
+      messagingSenderId: "941021055631",
+      appId: "1:941021055631:web:ffbfae2bce3856f742fefa",
+      measurementId: "G-Q7Z8VF2N2W"
+    };
+    
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Get event name from URL
+    const params = new URLSearchParams(window.location.search);
+    const eventName = params.get('event') || '';
+    
+    // Display event name
+    document.getElementById('eventTitle').textContent = eventName ? `${eventName} Feedback Form` : 'Feedback Form';
+    
+    // DOM elements
+    const form = document.getElementById('feedbackForm');
+    const questionsContainer = document.getElementById('questionsContainer');
+    const thankYouMessage = document.getElementById('thankYouMessage');
+    const downloadCertBtn = document.getElementById('downloadCertBtn');
+    const participantNameInput = document.getElementById('participantName');
+    const certStatus = document.getElementById('certStatus');
+    
+    // Store event data globally
+    let eventData = null;
+    
+    // Load questions from Firestore
+    async function loadQuestions() {
+      if (!eventName) {
+        questionsContainer.innerHTML = '<p class="text-red-500">Error: No event specified</p>';
+        return;
+      }
+      
+      try {
+        const doc = await db.collection("events").doc(eventName).get();
+        if (!doc.exists) {
+          questionsContainer.innerHTML = '<p class="text-red-500">Event not found</p>';
+          return;
+        }
+        
+        eventData = doc.data();
+        const questions = eventData.questions || [];
+        
+        if (questions.length === 0) {
+          questionsContainer.innerHTML = '<p class="text-yellow-500">No questions found for this event</p>';
+          return;
+        }
+        
+        // Clear loading spinner
+        questionsContainer.innerHTML = '';
+        
+        // Add questions to the form
+        questions.forEach((q, index) => {
+          const questionDiv = document.createElement('div');
+          questionDiv.className = 'mb-6';
+          
+          const label = document.createElement('label');
+          label.className = 'block text-white text-sm font-bold mb-2';
+          label.textContent = q.text;
+          label.setAttribute('for', `question_${index}`);
+          
+          questionDiv.appendChild(label);
+          
+          if (q.type === 'rating') {
+            // Create rating scale (1-5)
+            const ratingDiv = document.createElement('div');
+            ratingDiv.className = 'flex justify-between items-center gap-2';
+            
+            for (let i = 1; i <= 5; i++) {
+              const ratingGroup = document.createElement('div');
+              ratingGroup.className = 'flex flex-col items-center';
+              
+              const radio = document.createElement('input');
+              radio.type = 'radio';
+              radio.name = `question_${index}`;
+              radio.value = i;
+              radio.id = `question_${index}_rating_${i}`;
+              radio.className = 'form-radio h-6 w-6 text-[#3be382]';
+              radio.required = true;
+              
+              const ratingLabel = document.createElement('label');
+              ratingLabel.htmlFor = `question_${index}_rating_${i}`;
+              ratingLabel.className = 'text-white text-sm mt-1';
+              ratingLabel.textContent = i;
+              
+              ratingGroup.appendChild(radio);
+              ratingGroup.appendChild(ratingLabel);
+              ratingDiv.appendChild(ratingGroup);
+            }
+            
+            questionDiv.appendChild(ratingDiv);
+          } else {
+            // Create text input
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.id = `question_${index}`;
+            input.name = `question_${index}`;
+            input.className = 'w-full p-3 border border-gray-400 rounded-xl shadow-lg bg-transparent text-white placeholder-gray-400';
+            input.required = true;
+            
+            questionDiv.appendChild(input);
+          }
+          
+          questionsContainer.appendChild(questionDiv);
+        });
+      } catch (error) {
+        console.error("Error loading questions:", error);
+        questionsContainer.innerHTML = `<p class="text-red-500">Error loading questions: ${error.message}</p>`;
+      }
+    }
+    
+    // Form submission handler
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const participantName = participantNameInput.value.trim();
+      if (!participantName) {
+        alert("Please enter your name");
+        return;
+      }
+      
+      // Collect responses
+      const responses = [];
+      const questions = eventData.questions || [];
+      
+      questions.forEach((q, index) => {
+        if (q.type === 'rating') {
+          const selectedRating = document.querySelector(`input[name="question_${index}"]:checked`);
+          if (selectedRating) {
+            responses.push({
+              question: q.text,
+              answer: selectedRating.value,
+              type: q.type
+            });
+          }
+        } else {
+          const input = document.getElementById(`question_${index}`);
+          if (input && input.value) {
+            responses.push({
+              question: q.text,
+              answer: input.value,
+              type: q.type
+            });
+          }
+        }
+      });
+      
+      // Save responses to Firestore
+      try {
+        await db.collection("events").doc(eventName).collection("responses").add({
+          participantName,
+          responses,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // Hide form, show thank you message
+        form.classList.add('hidden');
+        participantNameInput.parentElement.classList.add('hidden');
+        thankYouMessage.classList.remove('hidden');
+      } catch (error) {
+        console.error("Error submitting feedback:", error);
+        alert("Error submitting feedback. Please try again.");
+      }
+    });
+    
+    // Certificate download handler
+    downloadCertBtn.addEventListener('click', async function() {
+      try {
+        certStatus.textContent = "Generating your certificate...";
+        downloadCertBtn.disabled = true;
+        
+        // Get the latest event data
+        const eventDoc = await db.collection("events").doc(eventName).get();
+        const eventData = eventDoc.data();
+        
+        console.log("Retrieved event data:", eventData);
+        
+        // Verify we have the necessary data
+        if (!eventData.certificateUrl) {
+          throw new Error("Certificate template not configured");
+        }
+        
+        if (!eventData.namePlacement) {
+          throw new Error("Certificate name placement not configured");
+        }
+        
+        // Check if CertificateGenerator is available
+        if (typeof CertificateGenerator === 'undefined') {
+          console.error("CertificateGenerator not loaded!");
+          
+          // Try to load it one more time
+          await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = './script/certificate-generator.js';
+            script.onload = resolve;
+            script.onerror = reject;
+            document.head.appendChild(script);
+            
+            // Set a timeout in case the script fails to load
+            setTimeout(resolve, 2000);
+          });
+          
+          // Check again after trying to load
+          if (typeof CertificateGenerator === 'undefined') {
+            throw new Error("CertificateGenerator could not be loaded");
+          }
+        }
+        
+        const participantName = participantNameInput.value.trim();
+        
+        // Generate the certificate
+        const certificateDataURL = await CertificateGenerator.generate({
+          certificateUrl: eventData.certificateUrl,
+          namePlacement: eventData.namePlacement,
+          participantName: participantName
+        });
+        
+        // Download the certificate
+        CertificateGenerator.download(certificateDataURL, `${eventName}-certificate.jpg`);
+        
+        certStatus.textContent = "Certificate downloaded!";
+        downloadCertBtn.textContent = "Download Again";
+        downloadCertBtn.disabled = false;
+        
+      } catch (error) {
+        console.error("Error generating certificate:", error);
+        certStatus.textContent = `Error: ${error.message}. Please contact the event organizer.`;
+        downloadCertBtn.disabled = false;
+      }
+    });
+    
+    // Load questions when the page is ready
+    loadQuestions();
+  </script>
 </body>
 </html>
-<style>
-/* Modern dark scrollbar styles */
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: #6ee7b7 #232b2b;
-}
-.custom-scrollbar::-webkit-scrollbar {
-  width: 10px;
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #6ee7b7;
-  border-radius: 8px;
-  border: 2px solid #232b2b;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-</style>

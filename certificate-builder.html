@@ -10,6 +10,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="./script/certificate-generator.js" defer></script>
 </head>
 <body class="flex flex-row min-h-screen bg-gradient-to-tr from-[#000000] from-35% to-[#00691c]">
   <!-- Sidebar -->
@@ -50,15 +51,23 @@
           style="height: 420px;">
           <!-- Konva canvas will be rendered here -->
         </div>
-      </div>
-      <div class="flex justify-center mt-10">
-        <button id="savePlacementBtn" class="bg-[#232b2b] border border-[#3be382] text-white font-bold px-8 py-3 rounded-xl hover:bg-[#1a1a1a] transition">
-          Deploy Event
-        </button>
+        <div class="text-white text-sm mt-2 flex items-center gap-2">
+          <span class="bg-[#3be382] text-black px-2 py-1 rounded-full text-xs">TIP</span>
+          <span>Drag the name to position it. Use mouse wheel to resize the text.</span>
+        </div>
+        <div class="flex justify-center gap-6 mt-4">
+          <button id="previewCertBtn" class="bg-[#232b2b] border border-[#3be382] text-white font-bold px-8 py-3 rounded-xl hover:bg-[#1a1a1a] transition">
+            Preview Certificate
+          </button>
+          <button id="savePlacementBtn" class="bg-[#232b2b] border border-[#3be382] text-white font-bold px-8 py-3 rounded-xl hover:bg-[#1a1a1a] transition">
+            Deploy Event
+          </button>
+        </div>
       </div>
       <span id="saveStatus" class="text-green-400 mt-2 text-center"></span>
     </div>
   </div>
+  
   <!-- QR Code Modal -->
   <div id="qrModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
     <div class="bg-white rounded-xl p-8 flex flex-col items-center">
@@ -66,6 +75,25 @@
       <button id="closeQrBtn" class="mt-4 px-6 py-2 rounded bg-[#232b2b] text-white border border-[#3be382] hover:bg-[#1a1a1a]">Close</button>
     </div>
   </div>
+
+  <!-- Certificate Preview Modal -->
+  <div id="previewModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl p-8 flex flex-col items-center max-w-4xl">
+      <h3 class="text-xl font-bold mb-4">Certificate Preview</h3>
+      <div id="previewContainer" class="border border-gray-300 mb-4 overflow-hidden">
+        <!-- Preview will be rendered here -->
+      </div>
+      <div class="flex gap-4">
+        <button id="downloadCertBtn" class="mt-4 px-6 py-2 rounded bg-[#232b2b] text-white border border-[#3be382] hover:bg-[#1a1a1a]">
+          Download Sample
+        </button>
+        <button id="closePreviewBtn" class="mt-4 px-6 py-2 rounded bg-gray-200 text-gray-800 border border-gray-400">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     const uploadBtn = document.getElementById('uploadBtn');
     const templateUpload = document.getElementById('templateUpload');
@@ -74,6 +102,11 @@
     const qrModal = document.getElementById('qrModal');
     const qrCodeContainer = document.getElementById('qrCodeContainer');
     const closeQrBtn = document.getElementById('closeQrBtn');
+    const previewCertBtn = document.getElementById('previewCertBtn');
+    const previewModal = document.getElementById('previewModal');
+    const closePreviewBtn = document.getElementById('closePreviewBtn');
+    const downloadCertBtn = document.getElementById('downloadCertBtn');
+    const previewContainer = document.getElementById('previewContainer');
 
     if (uploadBtn && templateUpload && fileName) {
       uploadBtn.onclick = () => templateUpload.click();
@@ -160,6 +193,27 @@
           await db.collection("events").doc(eventName).set({
             certificateUrl: cloudinaryUrl
           }, { merge: true });
+          
+          // Add this: Test certificate generation with the uploaded template
+          const eventData = await db.collection("events").doc(eventName).get();
+          const namePlacement = eventData.data().namePlacement;
+          
+          if (namePlacement) {
+            try {
+              // Test certificate generation
+              const testCertURL = await CertificateGenerator.generate({
+                certificateUrl: cloudinaryUrl,
+                namePlacement: namePlacement,
+                participantName: "Test Participant"
+              });
+              
+              console.log("Certificate generation test successful");
+            } catch (genError) {
+              console.error("Certificate generation test failed:", genError);
+              // Continue anyway since this is just a test
+            }
+          }
+          
         } catch (err) {
           alert('Failed to save certificate URL to event.');
           return;
@@ -186,6 +240,87 @@
       closeQrBtn.addEventListener('click', function() {
         qrModal.classList.add('hidden');
       });
+    }
+
+    if (previewCertBtn) {
+      previewCertBtn.addEventListener('click', function() {
+        // Open preview modal
+        previewModal.classList.remove('hidden');
+
+        // Render the current certificate state in the preview container
+        const stage = new Konva.Stage({
+          container: 'previewContainer',
+          width: 800,
+          height: 600
+        });
+
+        const layer = new Konva.Layer();
+        stage.add(layer);
+
+        // Add the uploaded image
+        if (templateUpload.files && templateUpload.files[0]) {
+          const reader = new FileReader();
+          reader.onload = function(evt) {
+            const img = new Image();
+            img.onload = function() {
+              const konvaImage = new Konva.Image({
+                x: 0,
+                y: 0,
+                width: stage.width(),
+                height: stage.height(),
+                draggable: false
+              });
+              konvaImage.image(img);
+              layer.add(konvaImage);
+              layer.batchDraw();
+            };
+            img.src = evt.target.result;
+          };
+          reader.readAsDataURL(templateUpload.files[0]);
+        }
+
+        // Add text elements for name and other details
+        // These should match the ones in the editor for accurate preview
+        const nameText = new Konva.Text({
+          x: 50,
+          y: 50,
+          text: 'John Doe', // Placeholder text, replace with actual data
+          fontSize: 30,
+          fontFamily: 'Calibri',
+          fill: 'white',
+          draggable: true
+        });
+        layer.add(nameText);
+
+        // Update the stage to show the new elements
+        layer.draw();
+      });
+    }
+
+    if (closePreviewBtn) {
+      closePreviewBtn.addEventListener('click', function() {
+        previewModal.classList.add('hidden');
+        // Clean up the preview container
+        previewContainer.innerHTML = '';
+      });
+    }
+
+    if (downloadCertBtn) {
+      downloadCertBtn.addEventListener('click', function() {
+        // Generate the certificate file (e.g., PDF) with the current settings
+        // This is a placeholder implementation, replace with actual file generation logic
+        const link = document.createElement('a');
+        link.href = templateUpload.files.length ? URL.createObjectURL(templateUpload.files[0]) : '#';
+        link.download = 'certificate-sample.png';
+        link.click();
+      });
+    }
+
+    // Add this: Test CertificateGenerator is loaded
+    if (typeof CertificateGenerator === 'undefined') {
+      console.warn("CertificateGenerator not loaded! Certificate generation may fail.");
+    } else {
+      console.log("CertificateGenerator loaded successfully");
     }
   </script>
   <script src="./script/certificate-builder.js" type="module"></script>

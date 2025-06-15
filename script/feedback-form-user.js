@@ -246,7 +246,6 @@ async function handleFormSubmit(event) {
 
 // Add this function to show the modal
 function showCertificateModal(certificateUrl) {
-  // Create modal if not present
   let modal = document.getElementById('certificateReadyModal');
   if (!modal) {
     modal = document.createElement('div');
@@ -264,34 +263,37 @@ function showCertificateModal(certificateUrl) {
     modal.classList.remove('hidden');
   }
 
-  // Download button logic
   const downloadBtn = document.getElementById('downloadCertBtn');
   if (downloadBtn) {
-    downloadBtn.onclick = () => {
+    downloadBtn.onclick = async () => {
       if (!certificateUrl) {
         alert("Certificate image not available.");
         return;
       }
-      // Draw the certificate with the user's name
       const userName = userInfo.name || "Participant";
+      // Fetch placement from Firestore
+      const params = new URLSearchParams(window.location.search);
+      const eventName = params.get('event');
+      let placement = { x: 0.5, y: 0.51, fontSize: 0.055, fontFamily: 'Montserrat, Arial, sans-serif', fill: '#1a2a3a' };
+      try {
+        const eventRef = doc(db, "events", eventName);
+        const eventSnap = await getDoc(eventRef);
+        if (eventSnap.exists() && eventSnap.data().namePlacement) {
+          placement = Object.assign(placement, eventSnap.data().namePlacement);
+        }
+      } catch (e) {}
       const img = new Image();
       img.crossOrigin = "anonymous";
       img.onload = function() {
-        // Adjust canvas size to match certificate image
         const canvas = document.createElement('canvas');
         canvas.width = img.width;
         canvas.height = img.height;
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0);
-
-        // Draw the name (adjust position/font as needed)
-        ctx.font = `bold ${Math.floor(canvas.width/18)}px Montserrat, Arial, sans-serif`;
-        ctx.fillStyle = "#1a2a3a";
+        ctx.font = `bold ${Math.floor(canvas.height * (placement.fontSize || 0.055))}px ${placement.fontFamily || 'Montserrat, Arial, sans-serif'}`;
+        ctx.fillStyle = placement.fill || "#1a2a3a";
         ctx.textAlign = "center";
-        // Move the name a little higher (e.g., 48% instead of 55%)
-        ctx.fillText(userName, canvas.width / 2, canvas.height * 0.51);
-
-        // Download the result
+        ctx.fillText(userName, canvas.width * (placement.x || 0.5), canvas.height * (placement.y || 0.51));
         const a = document.createElement('a');
         a.href = canvas.toDataURL("image/png");
         a.download = 'certificate.png';
@@ -306,7 +308,6 @@ function showCertificateModal(certificateUrl) {
     };
   }
 
-  // Close button logic
   const closeBtn = document.getElementById('closeCertModalBtn');
   if (closeBtn) {
     closeBtn.onclick = () => {
