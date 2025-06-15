@@ -291,28 +291,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     loadExistingPlacement();
 });
-            
-            // Apply the saved placement to the editor
-            nameText.x(placement.xPercent * width);
-            nameText.y(placement.yPercent * height);
-            nameText.fontSize(placement.fontSize || Math.floor(height / 16));
-            
-            if (placement.fontFamily) nameText.fontFamily(placement.fontFamily);
-            if (placement.fontStyle) nameText.fontStyle(placement.fontStyle);
-            if (placement.fill) nameText.fill(placement.fill);
-            
-            // If we have offset data, apply it
-            if (placement.offsetX) {
-                nameText.offsetX(nameText.width() * placement.offsetX);
-                nameText.offsetY(nameText.height() * placement.offsetY);
-            }
-            
-            layer.draw();
-        }
-    } catch (error) {
-        console.error("Error loading placement:", error);
-    }
-}
 
 // Initialize event handlers when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {

@@ -6,11 +6,18 @@
   <title>Feedback Form</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="/styles/styles.css">
+  
+  <!-- Load Firebase first -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  
+  <!-- Then load Konva (required for certificate generation) -->
   <script src="https://cdn.jsdelivr.net/npm/konva@9.2.0/konva.min.js"></script>
-  <script src="./script/certificate-generator.js"></script>
+  
+  <!-- Finally load the certificate generator (with defer to ensure it loads after Konva) -->
+  <script src="./script/certificate-generator.js" defer></script>
 </head>
+
 <body class="bg-gradient-to-tr from-[#000000] from-35% to-[#00691c] min-h-screen flex justify-center items-center p-4">
   <div class="glass max-w-2xl w-full rounded-xl p-8 shadow-lg">
     <div class="mb-6">
@@ -20,6 +27,7 @@
     
     <h1 id="eventTitle" class="text-2xl font-bold text-white mb-6">Event Feedback Form</h1>
     
+    <!-- Name Input Field -->
     <div class="mb-6">
       <label for="participantName" class="block text-white text-sm font-bold mb-2">Your Name</label>
       <input type="text" id="participantName" class="w-full p-3 border border-gray-400 rounded-xl shadow-lg bg-transparent text-white placeholder-gray-400" placeholder="Enter your full name" required>
@@ -27,6 +35,7 @@
     
     <form id="feedbackForm" class="space-y-6">
       <div id="questionsContainer">
+        <!-- Questions will be inserted here dynamically -->
         <div class="flex justify-center items-center p-8">
           <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#3be382]"></div>
         </div>
@@ -39,6 +48,7 @@
       </div>
     </form>
     
+    <!-- Thank you message (hidden initially) -->
     <div id="thankYouMessage" class="hidden text-center">
       <h2 class="text-2xl font-bold text-[#3be382] mb-4">Thank You!</h2>
       <p class="text-white mb-6">Your feedback has been submitted successfully.</p>
@@ -48,10 +58,12 @@
       <p id="certStatus" class="text-sm text-white mt-2"></p>
     </div>
 
+    <!-- Hidden certificate container -->
     <div id="certificateContainer" class="hidden"></div>
   </div>
 
   <script>
+    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyC92G1LybSWu3463j1Wi0yjZaTzuiHcIMk",
       authDomain: "autocert-8319d.firebaseapp.com",
@@ -62,14 +74,18 @@
       measurementId: "G-Q7Z8VF2N2W"
     };
     
+    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    // Get event name from URL
     const params = new URLSearchParams(window.location.search);
     const eventName = params.get('event') || '';
     
+    // Display event name
     document.getElementById('eventTitle').textContent = eventName ? `${eventName} Feedback Form` : 'Feedback Form';
     
+    // DOM elements
     const form = document.getElementById('feedbackForm');
     const questionsContainer = document.getElementById('questionsContainer');
     const thankYouMessage = document.getElementById('thankYouMessage');
@@ -77,8 +93,20 @@
     const participantNameInput = document.getElementById('participantName');
     const certStatus = document.getElementById('certStatus');
     
+    // Store event data globally
     let eventData = null;
     
+    // Check if certificate generator is loaded
+    function checkCertificateGenerator() {
+      if (typeof window.CertificateGenerator === 'undefined') {
+        console.error("Certificate Generator not loaded.");
+        return false;
+      }
+      console.log("Certificate Generator is loaded and ready.");
+      return true;
+    }
+    
+    // Load questions from Firestore
     async function loadQuestions() {
       if (!eventName) {
         questionsContainer.innerHTML = '<p class="text-red-500">Error: No event specified</p>';
@@ -100,8 +128,10 @@
           return;
         }
         
+        // Clear loading spinner
         questionsContainer.innerHTML = '';
         
+        // Add questions to the form
         questions.forEach((q, index) => {
           const questionDiv = document.createElement('div');
           questionDiv.className = 'mb-6';
@@ -114,6 +144,7 @@
           questionDiv.appendChild(label);
           
           if (q.type === 'rating') {
+            // Create rating scale (1-5)
             const ratingDiv = document.createElement('div');
             ratingDiv.className = 'flex justify-between items-center gap-2';
             
@@ -141,6 +172,7 @@
             
             questionDiv.appendChild(ratingDiv);
           } else {
+            // Create text input
             const input = document.createElement('input');
             input.type = 'text';
             input.id = `question_${index}`;
@@ -154,10 +186,12 @@
           questionsContainer.appendChild(questionDiv);
         });
       } catch (error) {
+        console.error("Error loading questions:", error);
         questionsContainer.innerHTML = `<p class="text-red-500">Error loading questions: ${error.message}</p>`;
       }
     }
     
+    // Form submission handler
     form.addEventListener('submit', async function(e) {
       e.preventDefault();
       
@@ -167,6 +201,7 @@
         return;
       }
       
+      // Collect responses
       const responses = [];
       const questions = eventData.questions || [];
       
@@ -192,6 +227,7 @@
         }
       });
       
+      // Save responses to Firestore
       try {
         await db.collection("events").doc(eventName).collection("responses").add({
           participantName,
@@ -199,55 +235,80 @@
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
         
+        // Hide form, show thank you message
         form.classList.add('hidden');
         participantNameInput.parentElement.classList.add('hidden');
         thankYouMessage.classList.remove('hidden');
       } catch (error) {
+        console.error("Error submitting feedback:", error);
         alert("Error submitting feedback. Please try again.");
       }
     });
     
+    // Certificate download handler
     downloadCertBtn.addEventListener('click', async function() {
+      certStatus.textContent = "Generating your certificate...";
+      downloadCertBtn.disabled = true;
+      
       try {
-        certStatus.textContent = "Generating your certificate...";
-        downloadCertBtn.disabled = true;
+        // Ensure certificate generator is loaded
+        if (!checkCertificateGenerator()) {
+          throw new Error("Certificate generator not available. Please try again later.");
+        }
         
+        // Get the latest event data
         const eventDoc = await db.collection("events").doc(eventName).get();
-        const eventData = eventDoc.data();
+        if (!eventDoc.exists) {
+          throw new Error("Event not found");
+        }
         
-        if (!eventData.certificateUrl) {
+        const updatedEventData = eventDoc.data();
+        console.log("Retrieved event data:", updatedEventData);
+        
+        // Verify we have the necessary data
+        if (!updatedEventData.certificateUrl) {
           throw new Error("Certificate template not configured");
         }
         
-        if (!eventData.namePlacement) {
+        if (!updatedEventData.namePlacement) {
           throw new Error("Certificate name placement not configured");
-        }
-        
-        if (typeof CertificateGenerator === 'undefined') {
-          throw new Error("Certificate generator not available");
         }
         
         const participantName = participantNameInput.value.trim();
         
-        const certificateDataURL = await CertificateGenerator.generate({
-          certificateUrl: eventData.certificateUrl,
-          namePlacement: eventData.namePlacement,
+        // Generate the certificate
+        const certificateDataURL = await window.CertificateGenerator.generate({
+          certificateUrl: updatedEventData.certificateUrl,
+          namePlacement: updatedEventData.namePlacement,
           participantName: participantName
         });
         
-        CertificateGenerator.download(certificateDataURL, `${eventName}-certificate.jpg`);
+        // Download the certificate
+        window.CertificateGenerator.download(certificateDataURL, `${eventName}-certificate.jpg`);
         
         certStatus.textContent = "Certificate downloaded!";
         downloadCertBtn.textContent = "Download Again";
         downloadCertBtn.disabled = false;
         
       } catch (error) {
-        certStatus.textContent = `Error: ${error.message}. Please contact the event organizer.`;
+        console.error("Error generating certificate:", error);
+        certStatus.textContent = `Error: ${error.message}`;
         downloadCertBtn.disabled = false;
       }
     });
     
-    loadQuestions();
+    // Initialize when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      loadQuestions();
+      
+      // Check dependencies
+      if (typeof Konva === 'undefined') {
+        console.error("Konva library not loaded!");
+      }
+      
+      // Wait a bit for the certificate generator to load
+      setTimeout(checkCertificateGenerator, 1000);
+    });
   </script>
 </body>
 </html>
