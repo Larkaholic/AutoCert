@@ -4,7 +4,6 @@ console.log("This file is no longer used. See form-builder.html for the updated 
 
 // Wait for DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', function() {
-  // Get form elements
   const form = document.getElementById('questionForm');
   const addBtn = document.getElementById('addQuestionBtn');
   const eventTitleInput = document.getElementById('eventTitle');
