@@ -41,3 +41,20 @@ body {
     transform: rotate(-90deg);
     opacity: 0.95; 
 }
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #6ee7b7 #232b2b;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #6ee7b7;
+  border-radius: 8px;
+  border: 2px solid #232b2b;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
