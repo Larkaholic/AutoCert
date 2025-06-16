@@ -213,8 +213,8 @@ document.getElementById('savePlacementBtn').addEventListener('click', async func
     }
     
     try {
-        // Calculate expiration time (20 seconds from now)
-        const expiresAt = new Date(Date.now() + 20000).toISOString();
+        // Calculate expiration time (2 minutes from now)
+        const expiresAt = new Date(Date.now() + 120000).toISOString();
         
         await firebase.firestore().collection("events").doc(eventName).set({
             namePlacement: placement,
