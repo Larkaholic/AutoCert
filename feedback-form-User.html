@@ -115,113 +115,126 @@
     
     // Load questions from Firestore
     async function loadQuestions() {
-      if (!eventName) {
-        questionsContainer.innerHTML = '<div class="bg-black/30 rounded-xl p-6 shadow-lg border border-red-500"><p class="text-red-500">Error: No event specified</p></div>';
-        return;
-      }
-      
-      try {
-        const doc = await db.collection("events").doc(eventName).get();
-        if (!doc.exists) {
-          questionsContainer.innerHTML = '<div class="bg-black/30 rounded-xl p-6 shadow-lg border border-red-500"><p class="text-red-500">Event not found</p></div>';
-          return;
+        if (!eventName) {
+            questionsContainer.innerHTML = '<div class="bg-black/30 rounded-xl p-6 shadow-lg border border-red-500"><p class="text-red-500">Error: No event specified</p></div>';
+            return;
         }
         
-        eventData = doc.data();
-        const questions = eventData.questions || [];
-        
-        if (questions.length === 0) {
-          questionsContainer.innerHTML = '<div class="bg-black/30 rounded-xl p-6 shadow-lg border border-yellow-500"><p class="text-yellow-500">No questions found for this event</p></div>';
-          return;
-        }
-        
-        // Clear loading spinner
-        questionsContainer.innerHTML = '';
-        
-        // Add questions to the form - each in its own card
-        questions.forEach((q, index) => {
-          // Create card container for this question
-          const questionCard = document.createElement('div');
-          questionCard.className = 'bg-black/30 rounded-xl p-6 shadow-lg border border-gray-700';
-          questionCard.id = `question_card_${index}`;
-          
-          // Add question number
-          const questionNumber = document.createElement('div');
-          questionNumber.className = 'text-[#3be382] text-sm font-semibold mb-1';
-          questionNumber.textContent = `Question ${index + 1}`;
-          questionCard.appendChild(questionNumber);
-          
-          // Create question label
-          const label = document.createElement('label');
-          label.className = 'block text-white text-lg font-bold mb-4';
-          label.textContent = q.text;
-          label.setAttribute('for', `question_${index}`);
-          questionCard.appendChild(label);
-          
-          if (q.type === 'rating') {
-            // Create rating scale (1-5)
-            const ratingDiv = document.createElement('div');
-            ratingDiv.className = 'flex justify-between items-center gap-1 px-8';
-            
-            for (let i = 1; i <= 5; i++) {
-              const ratingGroup = document.createElement('div');
-              ratingGroup.className = 'flex flex-col items-center';
-              
-              const radio = document.createElement('input');
-              radio.type = 'radio';
-              radio.name = `question_${index}`;
-              radio.value = i;
-              radio.id = `question_${index}_rating_${i}`;
-              radio.className = 'form-radio h-6 w-6 text-[#3be382] cursor-pointer';
-              radio.required = true;
-              
-              const ratingLabel = document.createElement('label');
-              ratingLabel.htmlFor = `question_${index}_rating_${i}`;
-              ratingLabel.className = 'text-white text-sm mt-2 cursor-pointer';
-              ratingLabel.textContent = i;
-              
-              ratingGroup.appendChild(radio);
-              ratingGroup.appendChild(ratingLabel);
-              ratingDiv.appendChild(ratingGroup);
+        try {
+            const doc = await db.collection("events").doc(eventName).get();
+            if (!doc.exists) {
+                questionsContainer.innerHTML = '<div class="bg-black/30 rounded-xl p-6 shadow-lg border border-red-500"><p class="text-red-500">Event not found</p></div>';
+                return;
             }
             
-            questionCard.appendChild(ratingDiv);
+            // Check if form has expired
+            const currentEventData = doc.data();  // Changed variable name from eventData to currentEventData
+            const expiresAt = new Date(currentEventData.expiresAt);
+            const now = new Date();
             
-            // Add rating scale labels
-            const ratingLabels = document.createElement('div');
-            ratingLabels.className = 'flex justify-between text-xs text-gray-400 mt-2 px-6';
-            ratingLabels.innerHTML = '<span>Poor</span><span>Excellent</span>';
-            questionCard.appendChild(ratingLabels);
+            if (now > expiresAt) {
+                questionsContainer.innerHTML = '<div class="bg-black/30 rounded-xl p-6 shadow-lg border border-red-500"><p class="text-red-500">This feedback form has expired</p></div>';
+                // Hide form elements
+                document.getElementById('participantName').parentElement.classList.add('hidden');
+                document.getElementById('submitBtn').classList.add('hidden');
+                return;
+            }
             
-          } else if (q.type === 'textarea') {
-            // Create text area for longer responses
-            const textarea = document.createElement('textarea');
-            textarea.id = `question_${index}`;
-            textarea.name = `question_${index}`;
-            textarea.rows = 3;
-            textarea.className = 'w-full p-3 border border-gray-400 rounded-xl shadow-lg bg-transparent text-white placeholder-gray-400 focus:border-[#3be382]';
-            textarea.required = true;
+            eventData = currentEventData;  // Now assign to global eventData
+            const questions = eventData.questions || [];
             
-            questionCard.appendChild(textarea);
-          } else {
-            // Create text input (default)
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.id = `question_${index}`;
-            input.name = `question_${index}`;
-            input.className = 'w-full p-3 border border-gray-400 rounded-xl shadow-lg bg-transparent text-white placeholder-gray-400 focus:border-[#3be382]';
-            input.required = true;
+            if (questions.length === 0) {
+              questionsContainer.innerHTML = '<div class="bg-black/30 rounded-xl p-6 shadow-lg border border-yellow-500"><p class="text-yellow-500">No questions found for this event</p></div>';
+              return;
+            }
             
-            questionCard.appendChild(input);
-          }
-          
-          // Add the card to the container
-          questionsContainer.appendChild(questionCard);
-        });
-      } catch (error) {
-        console.error("Error loading questions:", error);
-        questionsContainer.innerHTML = `<div class="bg-black/30 rounded-xl p-6 shadow-lg border border-red-500"><p class="text-red-500">Error loading questions: ${error.message}</p></div>`;
-      }
+            // Clear loading spinner
+            questionsContainer.innerHTML = '';
+            
+            // Add questions to the form - each in its own card
+            questions.forEach((q, index) => {
+              // Create card container for this question
+              const questionCard = document.createElement('div');
+              questionCard.className = 'bg-black/30 rounded-xl p-6 shadow-lg border border-gray-700';
+              questionCard.id = `question_card_${index}`;
+              
+              // Add question number
+              const questionNumber = document.createElement('div');
+              questionNumber.className = 'text-[#3be382] text-sm font-semibold mb-1';
+              questionNumber.textContent = `Question ${index + 1}`;
+              questionCard.appendChild(questionNumber);
+              
+              // Create question label
+              const label = document.createElement('label');
+              label.className = 'block text-white text-lg font-bold mb-4';
+              label.textContent = q.text;
+              label.setAttribute('for', `question_${index}`);
+              questionCard.appendChild(label);
+              
+              if (q.type === 'rating') {
+                // Create rating scale (1-5)
+                const ratingDiv = document.createElement('div');
+                ratingDiv.className = 'flex justify-between items-center gap-1 px-8';
+                
+                for (let i = 1; i <= 5; i++) {
+                  const ratingGroup = document.createElement('div');
+                  ratingGroup.className = 'flex flex-col items-center';
+                  
+                  const radio = document.createElement('input');
+                  radio.type = 'radio';
+                  radio.name = `question_${index}`;
+                  radio.value = i;
+                  radio.id = `question_${index}_rating_${i}`;
+                  radio.className = 'form-radio h-6 w-6 text-[#3be382] cursor-pointer';
+                  radio.required = true;
+                  
+                  const ratingLabel = document.createElement('label');
+                  ratingLabel.htmlFor = `question_${index}_rating_${i}`;
+                  ratingLabel.className = 'text-white text-sm mt-2 cursor-pointer';
+                  ratingLabel.textContent = i;
+                  
+                  ratingGroup.appendChild(radio);
+                  ratingGroup.appendChild(ratingLabel);
+                  ratingDiv.appendChild(ratingGroup);
+                }
+                
+                questionCard.appendChild(ratingDiv);
+                
+                // Add rating scale labels
+                const ratingLabels = document.createElement('div');
+                ratingLabels.className = 'flex justify-between text-xs text-gray-400 mt-2 px-6';
+                ratingLabels.innerHTML = '<span>Poor</span><span>Excellent</span>';
+                questionCard.appendChild(ratingLabels);
+                
+              } else if (q.type === 'textarea') {
+                // Create text area for longer responses
+                const textarea = document.createElement('textarea');
+                textarea.id = `question_${index}`;
+                textarea.name = `question_${index}`;
+                textarea.rows = 3;
+                textarea.className = 'w-full p-3 border border-gray-400 rounded-xl shadow-lg bg-transparent text-white placeholder-gray-400 focus:border-[#3be382]';
+                textarea.required = true;
+                
+                questionCard.appendChild(textarea);
+              } else {
+                // Create text input (default)
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.id = `question_${index}`;
+                input.name = `question_${index}`;
+                input.className = 'w-full p-3 border border-gray-400 rounded-xl shadow-lg bg-transparent text-white placeholder-gray-400 focus:border-[#3be382]';
+                input.required = true;
+                
+                questionCard.appendChild(input);
+              }
+              
+              // Add the card to the container
+              questionsContainer.appendChild(questionCard);
+            });
+        } catch (error) {
+            console.error("Error loading questions:", error);
+            questionsContainer.innerHTML = `<div class="bg-black/30 rounded-xl p-6 shadow-lg border border-red-500"><p class="text-red-500">Error loading questions: ${error.message}</p></div>`;
+        }
     }
     
     // Form submission handler

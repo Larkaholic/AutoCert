@@ -213,6 +213,9 @@ document.getElementById('savePlacementBtn').addEventListener('click', async func
     }
     
     try {
+        // Calculate expiration time (20 seconds from now)
+        const expiresAt = new Date(Date.now() + 20000).toISOString();
+        
         await firebase.firestore().collection("events").doc(eventName).set({
             namePlacement: placement,
             certificateGeneration: {
@@ -225,7 +228,8 @@ document.getElementById('savePlacementBtn').addEventListener('click', async func
                     fontStyle: nameText.fontStyle(),
                     fill: nameText.fill()
                 }
-            }
+            },
+            expiresAt: expiresAt // Add expiration time
         }, { merge: true });
         document.getElementById('saveStatus').textContent = "Placement saved successfully!";
         setTimeout(() => document.getElementById('saveStatus').textContent = "", 3000);
