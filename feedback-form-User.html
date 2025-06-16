@@ -19,7 +19,7 @@
 </head>
 
 <body class="bg-gradient-to-tr from-[#000000] from-35% to-[#00691c] min-h-screen flex justify-center items-center p-4 h-screen overflow-hidden">
-  <div class="glass max-w-2xl w-full rounded-xl h-full p-8 shadow-lg overflow-hidden">
+  <div class="glass max-w-2xl w-full rounded-xl h-full p-8 shadow-lg overflow-hidden flex flex-col">
     <div class="mb-6">
       <img src="/images/inttoLogo.png" alt="into logo" class="h-16 w-auto">
       <div class="text-xs text-white mt-1">Innovation & Technology Transfer Office</div>
@@ -27,29 +27,33 @@
     
     <h1 id="eventTitle" class="text-2xl font-bold text-white mb-6">Event Feedback Form</h1>
     
-    <div class="h-full overflow-y-scroll custom-scrollbar">
-      <!-- Name Input Field -->
-      <div class="mb-6">
-        <label for="participantName" class="block text-white text-sm font-bold mb-2">Your Name</label>
+    <!-- Make this a flex-grow div so it takes available space but allows room for the button -->
+    <div class="flex-grow overflow-y-auto custom-scrollbar" style="max-height: calc(100% - 180px);">
+      <!-- Name Input Field in Card -->
+      <div class="mb-6 bg-black/30 rounded-xl p-6 shadow-lg border border-gray-700">
+        <label for="participantName" class="block text-white text-lg font-bold mb-3">Your Name</label>
         <input type="text" id="participantName" class="w-full p-3 border border-gray-400 rounded-xl shadow-lg bg-transparent text-white placeholder-gray-400" placeholder="Enter your full name" required>
       </div>
       
-      <form id="feedbackForm" class="space-y-6 mb-20">
-        <div id="questionsContainer" class="h-full">
-          <!-- Questions will be inserted here dynamically -->
+      <form id="feedbackForm" class="space-y-6">
+        <div id="questionsContainer" class="space-y-6">
+          <!-- Loading indicator -->
           <div class="flex justify-center items-center p-8">
             <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#3be382]"></div>
           </div>
+          <!-- Questions will be inserted here dynamically -->
         </div>
       </form>
     </div>
-  
-      <div class="flex justify-center mt-8">
-        <button type="submit" id="submitBtn" class="bg-[#232b2b] border border-[#3be382] text-white font-bold px-8 py-3 rounded-xl hover:bg-[#1a1a1a] transition">
+    
+    <!-- Button container fixed at bottom with proper padding -->
+    <div class="pt-6 pb-2 mt-auto">
+      <div class="flex justify-center">
+        <button type="submit" id="submitBtn" form="feedbackForm" class="bg-[#232b2b] border border-[#3be382] text-white font-bold px-8 py-3 rounded-xl hover:bg-[#1a1a1a] transition shadow-lg w-full md:w-auto">
           Submit Feedback
         </button>
       </div>
-    </form>
+    </div>
     
     <!-- Thank you message -->
     <div id="thankYouMessage" class="hidden text-center">
@@ -112,14 +116,14 @@
     // Load questions from Firestore
     async function loadQuestions() {
       if (!eventName) {
-        questionsContainer.innerHTML = '<p class="text-red-500">Error: No event specified</p>';
+        questionsContainer.innerHTML = '<div class="bg-black/30 rounded-xl p-6 shadow-lg border border-red-500"><p class="text-red-500">Error: No event specified</p></div>';
         return;
       }
       
       try {
         const doc = await db.collection("events").doc(eventName).get();
         if (!doc.exists) {
-          questionsContainer.innerHTML = '<p class="text-red-500">Event not found</p>';
+          questionsContainer.innerHTML = '<div class="bg-black/30 rounded-xl p-6 shadow-lg border border-red-500"><p class="text-red-500">Event not found</p></div>';
           return;
         }
         
@@ -127,29 +131,37 @@
         const questions = eventData.questions || [];
         
         if (questions.length === 0) {
-          questionsContainer.innerHTML = '<p class="text-yellow-500">No questions found for this event</p>';
+          questionsContainer.innerHTML = '<div class="bg-black/30 rounded-xl p-6 shadow-lg border border-yellow-500"><p class="text-yellow-500">No questions found for this event</p></div>';
           return;
         }
         
         // Clear loading spinner
         questionsContainer.innerHTML = '';
         
-        // Add questions to the form
+        // Add questions to the form - each in its own card
         questions.forEach((q, index) => {
-          const questionDiv = document.createElement('div');
-          questionDiv.className = 'mb-6';
+          // Create card container for this question
+          const questionCard = document.createElement('div');
+          questionCard.className = 'bg-black/30 rounded-xl p-6 shadow-lg border border-gray-700';
+          questionCard.id = `question_card_${index}`;
           
+          // Add question number
+          const questionNumber = document.createElement('div');
+          questionNumber.className = 'text-[#3be382] text-sm font-semibold mb-1';
+          questionNumber.textContent = `Question ${index + 1}`;
+          questionCard.appendChild(questionNumber);
+          
+          // Create question label
           const label = document.createElement('label');
-          label.className = 'block text-white text-sm font-bold mb-2';
+          label.className = 'block text-white text-lg font-bold mb-4';
           label.textContent = q.text;
           label.setAttribute('for', `question_${index}`);
-          
-          questionDiv.appendChild(label);
+          questionCard.appendChild(label);
           
           if (q.type === 'rating') {
             // Create rating scale (1-5)
             const ratingDiv = document.createElement('div');
-            ratingDiv.className = 'flex justify-between items-center gap-2';
+            ratingDiv.className = 'flex justify-between items-center gap-1 px-8';
             
             for (let i = 1; i <= 5; i++) {
               const ratingGroup = document.createElement('div');
@@ -160,12 +172,12 @@
               radio.name = `question_${index}`;
               radio.value = i;
               radio.id = `question_${index}_rating_${i}`;
-              radio.className = 'form-radio h-6 w-6 text-[#3be382]';
+              radio.className = 'form-radio h-6 w-6 text-[#3be382] cursor-pointer';
               radio.required = true;
               
               const ratingLabel = document.createElement('label');
               ratingLabel.htmlFor = `question_${index}_rating_${i}`;
-              ratingLabel.className = 'text-white text-sm mt-1';
+              ratingLabel.className = 'text-white text-sm mt-2 cursor-pointer';
               ratingLabel.textContent = i;
               
               ratingGroup.appendChild(radio);
@@ -173,30 +185,52 @@
               ratingDiv.appendChild(ratingGroup);
             }
             
-            questionDiv.appendChild(ratingDiv);
+            questionCard.appendChild(ratingDiv);
+            
+            // Add rating scale labels
+            const ratingLabels = document.createElement('div');
+            ratingLabels.className = 'flex justify-between text-xs text-gray-400 mt-2 px-6';
+            ratingLabels.innerHTML = '<span>Poor</span><span>Excellent</span>';
+            questionCard.appendChild(ratingLabels);
+            
+          } else if (q.type === 'textarea') {
+            // Create text area for longer responses
+            const textarea = document.createElement('textarea');
+            textarea.id = `question_${index}`;
+            textarea.name = `question_${index}`;
+            textarea.rows = 3;
+            textarea.className = 'w-full p-3 border border-gray-400 rounded-xl shadow-lg bg-transparent text-white placeholder-gray-400 focus:border-[#3be382]';
+            textarea.required = true;
+            
+            questionCard.appendChild(textarea);
           } else {
-            // Create text input
+            // Create text input (default)
             const input = document.createElement('input');
             input.type = 'text';
             input.id = `question_${index}`;
             input.name = `question_${index}`;
-            input.className = 'w-full p-3 border border-gray-400 rounded-xl shadow-lg bg-transparent text-white placeholder-gray-400';
+            input.className = 'w-full p-3 border border-gray-400 rounded-xl shadow-lg bg-transparent text-white placeholder-gray-400 focus:border-[#3be382]';
             input.required = true;
             
-            questionDiv.appendChild(input);
+            questionCard.appendChild(input);
           }
           
-          questionsContainer.appendChild(questionDiv);
+          // Add the card to the container
+          questionsContainer.appendChild(questionCard);
         });
       } catch (error) {
         console.error("Error loading questions:", error);
-        questionsContainer.innerHTML = `<p class="text-red-500">Error loading questions: ${error.message}</p>`;
+        questionsContainer.innerHTML = `<div class="bg-black/30 rounded-xl p-6 shadow-lg border border-red-500"><p class="text-red-500">Error loading questions: ${error.message}</p></div>`;
       }
     }
     
     // Form submission handler
-    form.addEventListener('submit', async function(e) {
-      e.preventDefault();
+    document.getElementById('submitBtn').addEventListener('click', async function() {
+      // Check if form is valid
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
       
       const participantName = participantNameInput.value.trim();
       if (!participantName) {
@@ -224,7 +258,7 @@
             responses.push({
               question: q.text,
               answer: input.value,
-              type: q.type
+              type: q.type || 'text'
             });
           }
         }
@@ -241,11 +275,17 @@
         // Hide form, show thank you message
         form.classList.add('hidden');
         participantNameInput.parentElement.classList.add('hidden');
+        document.getElementById('submitBtn').classList.add('hidden');
         thankYouMessage.classList.remove('hidden');
       } catch (error) {
         console.error("Error submitting feedback:", error);
         alert("Error submitting feedback. Please try again.");
       }
+    });
+    
+    // Remove the existing submit handler from the form to avoid double submission
+    form.addEventListener('submit', function(e) {
+      e.preventDefault(); // Just prevent default, actual submission is handled by button click
     });
     
     // Certificate download handler
