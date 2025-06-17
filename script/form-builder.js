@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <option value="text" style="background-color: #232b2b;">Text</option>
           <option value="rating" style="background-color: #232b2b;">Rating (1-5)</option>
           <option value="college" style="background-color: #232b2b;">College/Department</option>
+          <option value="likelihood" style="background-color: #232b2b;">Likelihood Scale</option>
       </select>
       <button type="button" class="remove-btn text-red-600 hover:underline">Remove</button>
     `;
@@ -114,6 +115,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   <option value="text" style="background-color: #232b2b;"${q.type === "text" ? " selected" : ""}>Text</option>
                   <option value="rating" style="background-color: #232b2b;"${q.type === "rating" ? " selected" : ""}>Rating (1-5)</option>
                   <option value="college" style="background-color: #232b2b;"${q.type === "college" ? " selected" : ""}>College/Department</option>
+                  <option value="likelihood" style="background-color: #232b2b;"${q.type === "likelihood" ? " selected" : ""}>Likelihood Scale</option>
               </select>
               <button type="button" class="remove-btn text-red-600 hover:underline">Remove</button>
             `;
@@ -166,6 +168,32 @@ function createQuestionCard(question, index) {
                 </select>
             `;
             break;
+        case 'likelihood':
+            answerPreview = `
+                <div class="flex flex-col gap-2">
+                    <div class="flex items-center gap-3">
+                        <input type="radio" name="preview_${index}" disabled>
+                        <label class="text-white">Very Likely</label>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <input type="radio" name="preview_${index}" disabled>
+                        <label class="text-white">Likely</label>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <input type="radio" name="preview_${index}" disabled>
+                        <label class="text-white">Neutral</label>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <input type="radio" name="preview_${index}" disabled>
+                        <label class="text-white">Unlikely</label>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <input type="radio" name="preview_${index}" disabled>
+                        <label class="text-white">Very Unlikely</label>
+                    </div>
+                </div>
+            `;
+            break;
     }
 
     return `
@@ -184,6 +212,7 @@ function createQuestionCard(question, index) {
                     <option value="text"${question.type === 'text' ? ' selected' : ''}>Text</option>
                     <option value="rating"${question.type === 'rating' ? ' selected' : ''}>Rating (1-5)</option>
                     <option value="college"${question.type === 'college' ? ' selected' : ''}>College/Department</option>
+                    <option value="likelihood"${question.type === 'likelihood' ? ' selected' : ''}>Likelihood Scale</option>
                 </select>
             </div>
             <div>
@@ -232,4 +261,16 @@ function saveQuestionToFirestore(question) {
     .catch((error) => {
         console.error("Error saving question: ", error);
     });
+}
+
+function createQuestionTypeSelect() {
+    return `
+        <select class="question-type p-3 border border-gray-400 rounded-xl shadow-lg bg-[#232b2b] text-white">
+            <option value="text">Text Input</option>
+            <option value="textarea">Long Text</option>
+            <option value="rating">Rating (1-5)</option>
+            <option value="college">College/Department</option>
+            <option value="likelihood">Likelihood Scale</option>
+        </select>
+    `;
 }

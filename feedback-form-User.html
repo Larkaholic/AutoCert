@@ -247,6 +247,41 @@
                 textarea.required = true;
                 
                 questionCard.appendChild(textarea);
+              } else if (q.type === 'likelihood') {
+                const likelihoodDiv = document.createElement('div');
+                likelihoodDiv.className = 'flex flex-col gap-3';
+                
+                const options = [
+                    'Very Likely',
+                    'Likely',
+                    'Neutral',
+                    'Unlikely',
+                    'Very Unlikely'
+                ];
+                
+                options.forEach((option) => {
+                    const optionGroup = document.createElement('div');
+                    optionGroup.className = 'flex items-center gap-3';
+                    
+                    const radio = document.createElement('input');
+                    radio.type = 'radio';
+                    radio.name = `question_${index}`;
+                    radio.value = option;
+                    radio.id = `question_${index}_${option.replace(/\s+/g, '')}`;
+                    radio.className = 'form-radio h-5 w-5 text-[#3be382] cursor-pointer';
+                    radio.required = true;
+                    
+                    const label = document.createElement('label');
+                    label.htmlFor = radio.id;
+                    label.className = 'text-white cursor-pointer';
+                    label.textContent = option;
+                    
+                    optionGroup.appendChild(radio);
+                    optionGroup.appendChild(label);
+                    likelihoodDiv.appendChild(optionGroup);
+                });
+                
+                questionCard.appendChild(likelihoodDiv);
               } else {
                 // Create text input (default)
                 const input = document.createElement('input');
