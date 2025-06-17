@@ -178,9 +178,32 @@
         // Save to Firebase
         db.collection("events").doc(eventTitle).set(eventDetails, { merge: true })
         .then(() => {
-            // Create a URL for the feedback form with the correct case
-            // Use lowercase version for GitHub Pages compatibility
-            const feedbackUrl = `./feedback-form-user.html?event=${encodeURIComponent(eventTitle)}`;
+            // Generate the feedback form URL based on current location
+            let feedbackUrl;
+            if (location.hostname === "localhost" || location.hostname.startsWith("192.168.")) {
+              feedbackUrl = `./feedback-form-user.html?event=${encodeURIComponent(eventTitle)}`;
+            } else {
+              // For GitHub Pages or other hosted environments
+              
+              // Base URL - start with host
+              const baseUrl = `${window.location.protocol}//${window.location.host}`;
+              
+              // For GitHub Pages, we need to include the repository name in the path
+              if (location.host.includes('github.io')) {
+                // Extract the repository name from the current path
+                const pathParts = location.pathname.split('/');
+                const repoName = pathParts[1] || ''; // First part after the initial slash
+                
+                if (repoName) {
+                  feedbackUrl = `${baseUrl}/${repoName}/feedback-form-user.html?event=${encodeURIComponent(eventTitle)}`;
+                } else {
+                  feedbackUrl = `${baseUrl}/feedback-form-user.html?event=${encodeURIComponent(eventTitle)}`;
+                }
+              } else {
+                // For other environments, just use relative path
+                feedbackUrl = `${baseUrl}/feedback-form-user.html?event=${encodeURIComponent(eventTitle)}`;
+              }
+            }
             
             // Display feedback form URL or QR code 
             const output = document.getElementById('output');
@@ -190,7 +213,7 @@
                     <div class="p-4 bg-black/20 rounded-xl border border-[#3be382] mb-4">
                         <p class="text-white mb-2">Feedback form created! Share this URL with attendees:</p>
                         <div class="bg-white/10 p-2 rounded mb-2 break-all">
-                            <a href="${feedbackUrl}" target="_blank" class="text-[#3be382] hover:underline">${window.location.origin}${window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'))}/${feedbackUrl}</a>
+                            <a href="${feedbackUrl}" target="_blank" class="text-[#3be382] hover:underline">${feedbackUrl}</a>
                         </div>
                     </div>
                 `;
