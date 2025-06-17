@@ -6,6 +6,27 @@
     <title>Feedback Results</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="./styles/styles.css">
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 50;
+        }
+        
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: default;
+        }
+
+        .modal-content {
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+    </style>
 </head>
 <body class="flex flex-row min-h-screen bg-gradient-to-tr from-[#000000] from-35% to-[#00691c]">
     <!-- Sidebar -->
@@ -31,21 +52,25 @@
     <div class="glass flex-1 mx-8 my-8 p-10 rounded-xl shadow-md text-white flex flex-col overflow-y-auto h-[90vh]">
         <h1 class="text-center text-3xl font-bold mb-10">Feedback Results</h1>
         <div class="mb-8">
-            <label for="eventSelect" class="block text-base font-semibold mb-2">Event Name</label>
-            <select id="eventSelect" class="w-full p-3 border border-gray-400 rounded-xl shadow-lg bg-transparent text-white placeholder-gray-400">
+            <label for="eventSelect" class="block text-base font-semibold mb-2">Select Event</label>
+            <select id="eventSelect" class="custom-scrollbar w-full p-3 border border-gray-400 rounded-xl shadow-lg bg-[#232b2b] text-white">
                 <option value="">-- Select an event --</option>
             </select>
         </div>
-        <div class="mb-8">
-            <label class="block text-base font-semibold mb-2">What do you think about the event</label>
-            <textarea id="feedbackText" rows="6" readonly class="w-full p-3 border border-gray-400 rounded-xl shadow-lg bg-transparent text-white placeholder-gray-400 resize-none">1. This event is nice
-2. i like it 
-3. wheres the event
-            </textarea>
+        <div id="resultsContainer" class="flex-1 overflow-y-auto custom-scrollbar">
+            <!-- Results will be displayed here -->
         </div>
-        <div>
-            <label class="block text-base font-semibold mb-2">Rate the event</label>
-            <input id="rateInput" type="text" readonly class="w-full p-3 border border-gray-400 rounded-xl shadow-lg bg-transparent text-white placeholder-gray-400">
+    </div>
+    <!-- Add Modal for All Answers -->
+    <div id="answersModal" class="modal" onclick="closeAnswersModal()">
+        <div class="glass max-w-2xl w-full m-4 p-6 rounded-xl" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-white">All Responses</h3>
+                <button class="text-white hover:text-[#3be382]" onclick="closeAnswersModal()">×</button>
+            </div>
+            <div id="modalAnswers" class="modal-content custom-scrollbar space-y-2">
+                <!-- Answers will be populated here -->
+            </div>
         </div>
     </div>
     <!-- Firebase scripts -->
