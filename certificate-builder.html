@@ -227,7 +227,7 @@
           feedbackUrl = `https://example.com/feedback-form-user.html?event=${encodeURIComponent(eventName)}`;
         } else {
           // Use lowercase version for GitHub Pages compatibility
-          feedbackUrl = `${location.protocol}//${location.host}/AutoCert/feedback-form-user.html?event=${encodeURIComponent(eventName)}`;
+          feedbackUrl = `${location.protocol}//${location.host}/feedback-form-user.html?event=${encodeURIComponent(eventName)}`;
         }
         new QRCode(qrCodeContainer, {
           text: feedbackUrl,
