@@ -224,7 +224,7 @@
         qrCodeContainer.innerHTML = '';
         let feedbackUrl;
         if (location.hostname === "localhost" || location.hostname.startsWith("192.168.")) {
-          feedbackUrl = `https://example.com/feedback-form-User.html?event=${encodeURIComponent(eventName)}`;
+          feedbackUrl = `https://${location.host}/feedback-form-User.html?event=${encodeURIComponent(eventName)}`;
         } else {
           feedbackUrl = `https://${location.host}/feedback-form-User.html?event=${encodeURIComponent(eventName)}`;
         }
