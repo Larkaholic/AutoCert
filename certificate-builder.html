@@ -224,20 +224,14 @@
         qrCodeContainer.innerHTML = '';
         let feedbackUrl;
         if (location.hostname === "localhost" || location.hostname.startsWith("192.168.")) {
-          feedbackUrl = `https://example.com/feedback-form-User.html?event=${encodeURIComponent(eventName)}`;
+          feedbackUrl = `${window.location.origin}/feedback-form-user.html?event=${encodeURIComponent(eventName)}`;
         } else {
-          // Use full path without ./AutoCert prefix - let browser resolve from the root
-          feedbackUrl = `${location.protocol}//${location.host}/feedback-form-User.html?event=${encodeURIComponent(eventName)}`;
+          // Use lowercase version for GitHub Pages compatibility
+          feedbackUrl = `${location.protocol}//${location.host}/feedback-form-user.html?event=${encodeURIComponent(eventName)}`;
           
           // Special handling for GitHub Pages if needed
           if (location.host.includes('github.io')) {
-            // Extract the repository name from the current path
-            const pathParts = location.pathname.split('/');
-            const repoName = pathParts[1] || ''; // First part after the initial slash
-            
-            if (repoName) {
-              feedbackUrl = `${location.protocol}//${location.host}/${repoName}/feedback-form-User.html?event=${encodeURIComponent(eventName)}`;
-            }
+            feedbackUrl = `${location.protocol}//${location.host}/AutoCert/feedback-form-user.html?event=${encodeURIComponent(eventName)}`;
           }
         }
         new QRCode(qrCodeContainer, {
