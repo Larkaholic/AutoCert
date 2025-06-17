@@ -178,12 +178,30 @@
         // Save to Firebase
         db.collection("events").doc(eventTitle).set(eventDetails, { merge: true })
         .then(() => {
-          // Redirect to certificate builder after saving
-          window.location.href = `certificate-builder.html?event=${encodeURIComponent(eventTitle)}`;
+            // Create a URL for the feedback form with the correct case
+            // Use lowercase version for GitHub Pages compatibility
+            const feedbackUrl = `./feedback-form-user.html?event=${encodeURIComponent(eventTitle)}`;
+            
+            // Display feedback form URL or QR code 
+            const output = document.getElementById('output');
+            if (output) {
+                output.classList.remove("hidden");
+                output.innerHTML = `
+                    <div class="p-4 bg-black/20 rounded-xl border border-[#3be382] mb-4">
+                        <p class="text-white mb-2">Feedback form created! Share this URL with attendees:</p>
+                        <div class="bg-white/10 p-2 rounded mb-2 break-all">
+                            <a href="${feedbackUrl}" target="_blank" class="text-[#3be382] hover:underline">${window.location.origin}${window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'))}/${feedbackUrl}</a>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Redirect to certificate builder after saving
+            window.location.href = `certificate-builder.html?event=${encodeURIComponent(eventTitle)}`;
         })
         .catch((error) => {
-          output.classList.remove("hidden");
-          output.textContent = `Error saving to Firebase: ${error.message}`;
+            output.classList.remove("hidden");
+            output.textContent = `Error saving to Firebase: ${error.message}`;
         });
       });
 
