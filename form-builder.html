@@ -35,15 +35,28 @@
     <div class="mb-6">
       <div class="text-sm font-semibold mb-2">Instructions:</div>
       <ul class="list-disc list-inside text-sm mb-4 text-gray-200">
-        <li>Enter the Event Name</li>
+        <li>Enter the Event Name and Details</li>
         <li>Add Feedback Form Questions as needed</li>
         <li>Click deploy to Generate QR code and to Deploy the Form</li>
       </ul>
     </div>
-    <div class="mb-6">
-      <label for="eventTitle" class="block text-base font-semibold mb-2">Event Name</label>
-      <input type="text" id="eventTitle" class="w-full p-3 border border-gray-400 rounded-xl shadow-lg bg-transparent text-white placeholder-gray-400" placeholder="what is the name of the Event?" />
-    </div>
+    
+    <!-- Event Details Section -->
+    <div class="mb-6 p-5 bg-black/20 rounded-xl border border-gray-700">
+      <h2 class="text-xl font-semibold mb-4 border-b border-gray-600 pb-2">Event Details</h2>
+      
+      <div class="mb-4">
+        <label for="eventTitle" class="block text-base font-semibold mb-2">Event Name*</label>
+        <input type="text" id="eventTitle" class="w-full p-3 border border-gray-400 rounded-xl shadow-lg bg-transparent text-white placeholder-gray-400" placeholder="What is the name of the event?" required />
+      </div>
+      
+      <div class="mb-4">
+        <label for="eventDescription" class="block text-base font-semibold mb-2">Event Description</label>
+        <textarea id="eventDescription" class="w-full p-3 border border-gray-400 rounded-xl shadow-lg bg-transparent text-white placeholder-gray-400" placeholder="Describe the event..." rows="3"></textarea>
+      </div>
+    
+    <!-- Questions Section -->
+    <h2 class="text-xl font-semibold mb-4 border-b border-gray-600 pb-2">Feedback Questions</h2>
     <form id="questionForm" class="flex flex-col gap-6 overflow-y-auto max-h-[45vh]">
       <!-- questions will appear here -->
     </form>
@@ -52,6 +65,7 @@
         +
       </button>
     </div>
+    
     <div class="flex justify-center mt-8">
       <button id="saveFormBtn" class="bg-[#232b2b] border border-[#3be382] text-white font-bold px-8 py-3 rounded-xl hover:bg-[#1a1a1a] transition">
         Next
@@ -76,9 +90,157 @@
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
-  </script>
+    
+    // Wait for DOM to be fully loaded
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('questionForm');
+      const addBtn = document.getElementById('addQuestionBtn');
+      const eventTitleInput = document.getElementById('eventTitle');
+      const eventDescriptionInput = document.getElementById('eventDescription');
+      const eventDateInput = document.getElementById('eventDate');
+      const eventLocationInput = document.getElementById('eventLocation');
+      const eventOrganizerInput = document.getElementById('eventOrganizer');
+      const saveBtn = document.getElementById('saveFormBtn');
+      const output = document.getElementById('output');
+      
+      let questionCount = 0;
+      
+      // Add question button
+      addBtn.addEventListener('click', function() {
+        const title = eventTitleInput.value.trim();
+        
+        if (!title) {
+          alert("Please enter an event title first.");
+          return;
+        }
+        
+        questionCount++;
+        
+        const questionDiv = document.createElement('div');
+        questionDiv.className = "flex items-start gap-4 bg-black/20 p-4 rounded-xl";
+        questionDiv.innerHTML = `
+          <input type="text" name="question" placeholder="Question #${questionCount}" 
+              class="flex-1 p-2 border border-gray-300 bg-transparent text-white rounded-xl shadow-lg" />
+          <select name="type" class="p-2 border border-gray-300 bg-transparent text-white rounded-xl shadow-lg">
+              <option value="text" style="background-color: #232b2b;">Text</option>
+              <option value="rating" style="background-color: #232b2b;">Rating (1-5)</option>
+              <option value="textarea" style="background-color: #232b2b;">Long Text</option>
+          </select>
+          <button type="button" class="remove-btn text-red-600 hover:underline">Remove</button>
+        `;
+        
+        form.appendChild(questionDiv);
+      });
+      
+      // Remove button handler
+      form.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-btn')) {
+          const questionDiv = e.target.closest('div');
+          questionDiv.remove();
+        }
+      });
+      
+      // Save form handler
+      saveBtn.addEventListener('click', function() {
+        const eventTitle = eventTitleInput.value.trim();
+        if (!eventTitle) {
+          alert("Please enter an event title before saving.");
+          return;
+        }
 
-  <!-- Form builder script reference -->
-  <script src="./script/form-builder.js"></script>
+        const questionDivs = form.querySelectorAll('div');
+        const questions = [];
+
+        questionDivs.forEach(div => {
+          const input = div.querySelector('input[name="question"]');
+          const select = div.querySelector('select[name="type"]');
+          if (input && input.value.trim()) {
+            questions.push({
+              text: input.value.trim(),
+              type: select ? select.value : "text",
+              createdAt: new Date().toISOString()
+            });
+          }
+        });
+
+        if (questions.length === 0) {
+          alert("Please add at least one question.");
+          return;
+        }
+
+        // Collect event details
+        const eventDetails = {
+          description: eventDescriptionInput.value.trim(),
+          questions: questions,
+          lastUpdated: new Date().toISOString()
+        };
+
+        // Save to Firebase
+        db.collection("events").doc(eventTitle).set(eventDetails, { merge: true })
+        .then(() => {
+          // Redirect to certificate builder after saving
+          window.location.href = `certificate-builder.html?event=${encodeURIComponent(eventTitle)}`;
+        })
+        .catch((error) => {
+          output.classList.remove("hidden");
+          output.textContent = `Error saving to Firebase: ${error.message}`;
+        });
+      });
+
+      // Fetch existing event data when page loads or event title changes
+      function fetchEventData() {
+        const eventTitle = eventTitleInput.value.trim();
+        if (!eventTitle || eventTitle.length < 3) return;
+        
+        form.innerHTML = "";
+        questionCount = 0;
+        
+        db.collection("events").doc(eventTitle).get()
+          .then(doc => {
+            if (doc.exists) {
+              const data = doc.data();
+              
+              // Populate event details
+              eventDescriptionInput.value = data.description || '';
+              if (data.date) eventDateInput.value = data.date;
+              eventLocationInput.value = data.location || '';
+              eventOrganizerInput.value = data.organizer || '';
+              
+              // Populate questions
+              const questions = data.questions || [];
+              
+              questions.forEach(q => {
+                questionCount++;
+                const questionDiv = document.createElement('div');
+                questionDiv.className = "flex items-start gap-4 bg-black/20 p-4 rounded-xl";
+                questionDiv.innerHTML = `
+                  <input type="text" name="question" value="${q.text}" placeholder="Question #${questionCount}" 
+                      class="flex-1 p-2 border border-gray-300 bg-transparent text-white rounded-xl shadow-lg" />
+                  <select name="type" class="p-2 border border-gray-300 bg-transparent text-white rounded-xl shadow-lg">
+                      <option value="text" style="background-color: #232b2b;"${q.type === "text" ? " selected" : ""}>Text</option>
+                      <option value="rating" style="background-color: #232b2b;"${q.type === "rating" ? " selected" : ""}>Rating (1-5)</option>
+                      <option value="textarea" style="background-color: #232b2b;"${q.type === "textarea" ? " selected" : ""}>Long Text</option>
+                  </select>
+                  <button type="button" class="remove-btn text-red-600 hover:underline">Remove</button>
+                `;
+                form.appendChild(questionDiv);
+              });
+            }
+          })
+          .catch(error => {
+            output.classList.remove("hidden");
+            output.textContent = `Error fetching from Firebase: ${error.message}`;
+          });
+      }
+      
+      // Call fetchEventData when event title changes
+      if (eventTitleInput) {
+        eventTitleInput.addEventListener('input', fetchEventData);
+      }
+      
+      // Initial fetch attempt
+      fetchEventData();
+    });
+  </script>
 </body>
 </html>
