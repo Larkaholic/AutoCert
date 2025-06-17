@@ -224,14 +224,14 @@
         qrCodeContainer.innerHTML = '';
         let feedbackUrl;
         if (location.hostname === "localhost" || location.hostname.startsWith("192.168.")) {
-          feedbackUrl = `${window.location.origin}/feedback-form-user.html?event=${encodeURIComponent(eventName)}`;
+          feedbackUrl = `${window.location.origin}/feedback-form-User.html?event=${encodeURIComponent(eventName)}`;
         } else {
           // Use lowercase version for GitHub Pages compatibility
-          feedbackUrl = `${location.protocol}//${location.host}/feedback-form-user.html?event=${encodeURIComponent(eventName)}`;
+          feedbackUrl = `${location.protocol}//${location.host}/feedback-form-User.html?event=${encodeURIComponent(eventName)}`;
           
           // Special handling for GitHub Pages if needed
           if (location.host.includes('github.io')) {
-            feedbackUrl = `${location.protocol}//${location.host}/AutoCert/feedback-form-user.html?event=${encodeURIComponent(eventName)}`;
+            feedbackUrl = `${location.protocol}//${location.host}/AutoCert/feedback-form-User.html?event=${encodeURIComponent(eventName)}`;
           }
         }
         new QRCode(qrCodeContainer, {
