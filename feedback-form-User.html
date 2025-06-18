@@ -327,7 +327,23 @@
           if (selectedRating) {
             responses.push({
               question: q.text,
-              answer: selectedRating.value,
+              answer: parseInt(selectedRating.value), // Convert rating value to integer
+              type: q.type
+            });
+          } else {
+            // Handle case when no rating is selected
+            responses.push({
+              question: q.text,
+              answer: 0, // Default value if no rating selected
+              type: q.type
+            });
+          }
+        } else if (q.type === 'likelihood') {
+          const selectedOption = document.querySelector(`input[name="question_${index}"]:checked`);
+          if (selectedOption) {
+            responses.push({
+              question: q.text,
+              answer: selectedOption.value,
               type: q.type
             });
           }
@@ -343,13 +359,17 @@
         }
       });
       
+      console.log('Responses to be submitted:', responses); // Add this for debugging
+      
       // Save responses to Firestore
       try {
-        await db.collection("events").doc(eventName).collection("responses").add({
+        const docRef = await db.collection("events").doc(eventName).collection("responses").add({
           participantName,
           responses,
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
+        
+        console.log('Feedback submitted with ID:', docRef.id); // Add this for confirmation
         
         // Hide form, show thank you message
         form.classList.add('hidden');
