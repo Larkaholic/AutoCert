@@ -51,11 +51,16 @@
     <!-- Main Content -->
     <div class="glass flex-1 mx-8 my-8 p-10 rounded-xl shadow-md text-white flex flex-col overflow-y-auto h-[90vh]">
         <h1 class="text-center text-3xl font-bold mb-10">Feedback Results</h1>
-        <div class="mb-8">
-            <label for="eventSelect" class="block text-base font-semibold mb-2">Select Event</label>
-            <select id="eventSelect" class="custom-scrollbar w-full p-3 border border-gray-400 rounded-xl shadow-lg bg-[#232b2b] text-white">
-                <option value="">-- Select an event --</option>
-            </select>
+        <div class="mb-8 flex justify-between items-center">
+            <div class="flex-1 mr-4">
+                <label for="eventSelect" class="block text-base font-semibold mb-2">Select Event</label>
+                <select id="eventSelect" class="custom-scrollbar w-full p-3 border border-gray-400 rounded-xl shadow-lg bg-[#232b2b] text-white">
+                    <option value="">-- Select an event --</option>
+                </select>
+            </div>
+            <button id="exportCsvBtn" class="h-[48px] px-6 bg-[#232b2b] border border-[#3be382] text-white font-bold rounded-xl hover:bg-[#1a1a1a] transition mt-8">
+                Export to CSV
+            </button>
         </div>
         <div id="resultsContainer" class="flex-1 overflow-y-auto custom-scrollbar">
             <!-- Results will be displayed here -->
@@ -77,6 +82,18 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="./script/firebase.js" type="module"></script>
+    <script src="./script/export-csv.js"></script>
     <script src="./script/feedback-result.js" type="module"></script>
+
+    <script>
+        document.getElementById('exportCsvBtn').addEventListener('click', function() {
+            const eventName = document.getElementById('eventSelect').value;
+            if (!eventName) {
+                alert('Please select an event first');
+                return;
+            }
+            exportToCSV(eventName);
+        });
+    </script>
 </body>
 </html>

@@ -38,14 +38,34 @@
          style="box-shadow: 0 2px 32px 0 rgba(0,0,0,0.12);">
       <h1 class="text-center text-4xl font-extrabold mb-10 text-white">Certificate Builder</h1>
       <div class="flex flex-col gap-8">
-        <div>
-          <label class="block font-bold text-lg mb-4 text-white">Upload Certificate Template</label>
-          <div class="flex flex-row gap-6 items-center">
-            <button id="uploadBtn" class="border border-[#3be382] rounded-full px-10 py-2 text-white font-semibold bg-transparent hover:bg-[#1a1a1a] transition">Upload</button>
-            <input type="file" id="templateUpload" accept="image/png, image/jpeg" class="hidden"/>
-            <span id="fileName" class="border border-[#3be382] rounded-xl px-8 py-2 bg-transparent text-white text-lg font-bold min-w-[260px] text-left">No File Chosen</span>
+        <div class="flex justify-between items-start">
+          <!-- Left side: Upload controls -->
+          <div>
+            <label class="block font-bold text-lg mb-4 text-white">Upload Certificate Template</label>
+            <div class="flex flex-row gap-6 items-center">
+              <button id="uploadBtn" class="border border-[#3be382] rounded-full px-10 py-2 text-white font-semibold bg-transparent hover:bg-[#1a1a1a] transition">Upload</button>
+              <input type="file" id="templateUpload" accept="image/png, image/jpeg" class="hidden"/>
+              <span id="fileName" class="border border-[#3be382] rounded-xl px-8 py-2 bg-transparent text-white text-lg font-bold min-w-[260px] text-left">No File Chosen</span>
+            </div>
+          </div>
+
+          <!-- Right side: Expiration controls -->
+          <div>
+            <label class="block font-bold text-lg mb-4 text-white">Form Expiration</label>
+            <div class="flex flex-row items-center gap-4">
+              <button id="decreaseTime" class="px-4 py-2 border border-[#3be382] rounded-xl bg-transparent text-white hover:bg-[#1a1a1a]">
+                -30m
+              </button>
+              <div id="expirationDisplay" class="text-white text-lg font-bold min-w-[100px] text-center">
+                30 mins
+              </div>
+              <button id="increaseTime" class="px-4 py-2 border border-[#3be382] rounded-xl bg-transparent text-white hover:bg-[#1a1a1a]">
+                +30m
+              </button>
+            </div>
           </div>
         </div>
+
         <div id="konvaContainer"
           class="border border-[#3be382] rounded-xl bg-gradient-to-br from-white/5 to-[#3be382]/5 flex justify-center items-center w-full"
           style="height: 420px;">
@@ -107,6 +127,9 @@
     const closePreviewBtn = document.getElementById('closePreviewBtn');
     const downloadCertBtn = document.getElementById('downloadCertBtn');
     const previewContainer = document.getElementById('previewContainer');
+    const expirationDisplay = document.getElementById('expirationDisplay');
+    const increaseTimeBtn = document.getElementById('increaseTime');
+    const decreaseTimeBtn = document.getElementById('decreaseTime');
 
     if (uploadBtn && templateUpload && fileName) {
       uploadBtn.onclick = () => templateUpload.click();
@@ -220,25 +243,25 @@
         }
 
         // Show QR modal
-        qrModal.classList.remove('hidden');
-        qrCodeContainer.innerHTML = '';
-        let feedbackUrl;
-        if (location.hostname === "localhost" || location.hostname.startsWith("192.168.")) {
-          feedbackUrl = `${window.location.origin}/feedback-form-User.html?event=${encodeURIComponent(eventName)}`;
-        } else {
-          // Use lowercase version for GitHub Pages compatibility
-          feedbackUrl = `${location.protocol}//${location.host}/feedback-form-User.html?event=${encodeURIComponent(eventName)}`;
+        // qrModal.classList.remove('hidden');
+        // qrCodeContainer.innerHTML = '';
+        // let feedbackUrl;
+        // if (location.hostname === "localhost" || location.hostname.startsWith("192.168.")) {
+        //   feedbackUrl = `${window.location.origin}/feedback-form-User.html?event=${encodeURIComponent(eventName)}`;
+        // } else {
+        //   // Use lowercase version for GitHub Pages compatibility
+        //   feedbackUrl = `${location.protocol}//${location.host}/feedback-form-User.html?event=${encodeURIComponent(eventName)}`;
           
-          // Special handling for GitHub Pages if needed
-          if (location.host.includes('github.io')) {
-            feedbackUrl = `${location.protocol}//${location.host}/AutoCert/feedback-form-User.html?event=${encodeURIComponent(eventName)}`;
-          }
-        }
-        new QRCode(qrCodeContainer, {
-          text: feedbackUrl,
-          width: 256,
-          height: 256
-        });
+        //   // Special handling for GitHub Pages if needed
+        //   if (location.host.includes('github.io')) {
+        //     feedbackUrl = `${location.protocol}//${location.host}/AutoCert/feedback-form-User.html?event=${encodeURIComponent(eventName)}`;
+        //   }
+        // }
+        // new QRCode(qrCodeContainer, {
+        //   text: feedbackUrl,
+        //   width: 256,
+        //   height: 256
+        // });
       });
     }
 
@@ -327,6 +350,27 @@
       console.warn("CertificateGenerator not loaded! Certificate generation may fail.");
     } else {
       console.log("CertificateGenerator loaded successfully");
+    }
+
+    // Expiration time controls
+    let expirationTime = 30; // Default to 30 minutes
+    const updateExpirationDisplay = () => {
+      expirationDisplay.textContent = `${expirationTime} ${expirationTime === 1 ? 'min' : 'mins'}`;
+    };
+    updateExpirationDisplay();
+
+    if (increaseTimeBtn) {
+      increaseTimeBtn.addEventListener('click', function() {
+        expirationTime += 30;
+        updateExpirationDisplay();
+      });
+    }
+
+    if (decreaseTimeBtn) {
+      decreaseTimeBtn.addEventListener('click', function() {
+        expirationTime = Math.max(1, expirationTime - 30);
+        updateExpirationDisplay();
+      });
     }
   </script>
   <script src="./script/certificate-builder.js" type="module"></script>

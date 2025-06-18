@@ -1,5 +1,6 @@
 let stage, layer, nameText, bgImageObj;
 let actualImageWidth, actualImageHeight;
+let expirationMinutes = 30; // Default 30 minutes
 
 function getResponsiveSize() {
     const container = document.getElementById('konvaContainer');
@@ -175,6 +176,19 @@ document.getElementById('downloadCertBtn').addEventListener('click', function() 
     document.body.removeChild(downloadLink);
 });
 
+function updateExpirationDisplay() {
+    const hours = Math.floor(expirationMinutes / 60);
+    const mins = expirationMinutes % 60;
+    const display = hours > 0 ? 
+        `${hours}h ${mins}m` : 
+        `${mins} mins`;
+    document.getElementById('expirationDisplay').textContent = display;
+}
+
+function calculateExpirationTime() {
+    return new Date(Date.now() + (expirationMinutes * 60 * 1000)).toISOString();
+}
+
 document.getElementById('savePlacementBtn').addEventListener('click', async function() {
     if (!nameText || !bgImageObj) {
         document.getElementById('saveStatus').textContent = "Please upload a template and position the name.";
@@ -213,8 +227,7 @@ document.getElementById('savePlacementBtn').addEventListener('click', async func
     }
     
     try {
-        // Calculate expiration time (2 minutes from now)
-        const expiresAt = new Date(Date.now() + 1550000).toISOString();
+        const expiresAt = calculateExpirationTime();
         
         await firebase.firestore().collection("events").doc(eventName).set({
             namePlacement: placement,
@@ -229,7 +242,7 @@ document.getElementById('savePlacementBtn').addEventListener('click', async func
                     fill: nameText.fill()
                 }
             },
-            expiresAt: expiresAt // Add expiration time
+            expiresAt: expiresAt
         }, { merge: true });
         document.getElementById('saveStatus').textContent = "Placement saved successfully!";
         setTimeout(() => document.getElementById('saveStatus').textContent = "", 3000);
@@ -330,4 +343,20 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Load existing
     loadExistingPlacement();
+    
+    // Add expiration time controls
+    document.getElementById('decreaseTime').addEventListener('click', () => {
+        if (expirationMinutes > 30) {
+            expirationMinutes -= 30;
+            updateExpirationDisplay();
+        }
+    });
+
+    document.getElementById('increaseTime').addEventListener('click', () => {
+        expirationMinutes += 30;
+        updateExpirationDisplay();
+    });
+
+    // Initialize display
+    updateExpirationDisplay();
 });
