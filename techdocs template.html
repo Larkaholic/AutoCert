@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Technical Documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background: #fffef9;
+            color: #222;
+        }
+        header {
+            background: #0D291F;
+            color: #fff;
+            padding: 1.5rem 2rem;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+        nav {
+            background: #265C46;
+            padding: 1rem 2rem;
+        }
+        nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            gap: 2rem;
+        }
+        nav a {
+            color: #D8CFC4;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        nav a:hover {
+            background: #061710;
+            padding:4px;
+            border-radius: 6px;
+            
+        }
+        main {
+            max-width: 900px;
+            margin: 2rem auto;
+            background: #fff;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        section {
+            margin-bottom: 2rem;
+        }
+        h2 {
+            color: #2d3e50;
+            margin-top: 0;
+        }
+        h3 {
+            color: #2d3e50;
+            margin-top: 0;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        code {
+            font-family: 'Fira Mono', 'Consolas', monospace;
+            color: #c7254e;
+        }
+        @media (max-width: 600px) {
+            main, nav, header {
+                padding: 1rem;
+            }
+            nav ul {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+
+                .usage-steps {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 2rem;
+                    margin-bottom: 2rem;
+                }
+                .usage-card {
+                    flex: 1 1 250px;
+                    background: #f8fafb;
+                    border: 1px solid #e0e0e0;
+                    border-radius: 8px;
+                    padding: 1.5rem;
+                    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+                    min-width: 220px;
+                }
+                .usage-card h3 {
+                    margin-top: 0;
+                    color: #265C46;
+                    font-size: 1.15rem;
+                }
+                .usage-card ul {
+                    padding-left: 1.2em;
+                    margin: 0.5em 0 0 0;
+                }
+                .usage-card li {
+                    margin-bottom: 0.5em;
+                }
+                @media (max-width: 800px) {
+                    .usage-steps {
+                        flex-direction: column;
+                        gap: 1.5rem;
+                    }
+                }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>InTTO Automated Certificate System - Technical Documentation</h1>
+    </header>
+    <nav>
+        <ul>
+            <li><a href="#introduction">Introduction</a></li>
+            <li><a href="#installation">Installation</a></li>
+            <li><a href="#usage">Usage</a></li>
+            <li><a href="#api">API Reference</a></li>
+            <li><a href="#faq">FAQ</a></li>
+            <li><a href="#usability">Usability Testing</a></li>
+        </ul>
+    </nav>
+    <main>
+        <!-- INTRODUCTION START -->
+        <section id="introduction">
+            <h2>Introduction</h2>
+            <p>
+                The <strong>InTTO Automated Certificate System</strong> is a web-based platform designed to streamline the generation, management, and distribution of event certificates. This documentation details the system architecture, installation procedures, usage workflows, and API endpoints. It is intended for administrators, developers, and end-users seeking to understand or integrate with the certificate automation process for InTTO events.
+            </p>
+        </section>
+        <!-- INTRODUCTION END -->
+
+        
+
+        <!-- USAGE START -->
+        <section id="usage">
+            <h2>Usage</h2>
+            <div class="usage-steps">
+                <div class="usage-card">
+                    <h3>Admin Panel</h3>
+                    <ul>
+                        <li>Log in to the admin panel.</li>
+                        <li>Create a new event.</li>
+                        <li>Add questions for the participants.</li>
+                        <li>Upload a certificate template.</li>
+                        <li>View feedback ratings, comments and suggestions of current or previous events.</li>
+                    
+                    </ul>
+                </div>
+                <div class="usage-card">
+                    <h3>User Feedback & Download</h3>
+                    <ul>
+                        <li>Access the feedback form after an event.</li>
+                        <li>Submit feedback to rate the current event and help improve future events.</li>
+                        <li>Download your certificate directly from the form after submission.</li>
+                    </ul>
+                </div>
+                <div class="usage-card">
+                    <h3>Certificate Repository</h3>
+                    <ul>
+                        <li>Go to the certificate repository page.</li>
+                        <li>Search for certificates by name or event.</li>
+                        <li>View and verify certificate authenticity.</li>
+                    </ul>
+                </div>
+            </div>
+            
+        </section>
+        <!-- USAGE END -->
+
+        <!-- API REFERENCE START -->
+        <section id="api">
+            <h2>API Reference</h2>
+
+            <h3>Certificate Template Editor</h3>
+            <p>
+            The system uses <a href="https://konvajs.org/" target="_blank">Konva.js</a> to provide an interactive canvas for admins to position the <code>user_name</code> placeholder on certificate templates. This ensures that recipient names appear at the correct location on generated certificates.
+            </p>
+
+            <h3>Feedback Form QR Code</h3>
+            <p>
+            For each event, a unique QR code is generated and shown to the participants. Scanning this QR code directs users to the feedback form for that specific event.
+            </p>
+
+            <h3>Data Storage</h3>
+            <ul>
+            <li>
+                <strong>Firebase Firestore:</strong> Stores certificate recipient lists, event details, and feedback responses.
+            </li>
+            <li>
+                <strong>Cloudinary:</strong> Used to upload and store certificate template images securely.
+            </li>
+            </ul>
+        </section>
+        <!-- API REFERENCE END -->
+
+        <!-- FAQ START -->
+        <section id="faq">
+            <h2>FAQ</h2>
+            <p>
+            <strong>Q:</strong> How do I report bugs?<br>
+            <strong>A:</strong> Please open an issue on our GitHub repository.
+            </p>
+            <p>
+            <strong>Q:</strong> How do I generate certificates for a new event?<br>
+            <strong>A:</strong> Log in to the admin panel, create a new event, upload a certificate template, and deploy feedback form.
+            </p>
+            <p>
+            <strong>Q:</strong> Can participants download their certificates directly?<br>
+            <strong>A:</strong> Yes, after submitting feedback, participants can download their certificates from the provided button.
+            </p>
+            <p>
+            <strong>Q:</strong> How is certificate authenticity verified?<br>
+            <strong>A:</strong> Each certificate has a unique Response ID and can be verified via the certificate repository page.
+            </p>
+            <p>
+            <strong>Q:</strong> What file formats are supported for certificate templates?<br>
+            <strong>A:</strong> Common image formats such as PNG and JPEG are supported. But PNG is recommended for better quality.
+            </p>
+            <p>
+            <strong>Q:</strong> Where is my data stored?<br>
+            <strong>A:</strong> Data is securely stored in Firebase Firestore and certificate templates are stored in Cloudinary.
+            </p>
+            <p>
+            <strong>Q:</strong> Who can access the admin panel?<br>
+            <strong>A:</strong> Only authorized administrators with valid credentials can access the admin panel.
+            </p>
+        </section>
+        <!-- FAQ END -->
+
+        <!-- USABILITY TESTING START -->
+        <section id="usability">
+            <h2>Usability Testing Results</h2>
+            <p>
+               The end-users were tasked to simply join the server, where the link was provided on the intern-group chat. After routing to the feedback form, all interns were asked to rate the User Interface of the Automated Certificate System. Upon successful entry, the users are given a link to a satire certificate with their name in it. In this process the certificates were all carefully inspected to check placement accuracy, and the test concludes. 
+            </p>
+            <p>
+                All names in the certificates were placed correctly, and the users were able to download their certificates without any issues. The feedback form was also easy to navigate, and all participants were able to submit their feedback successfully.
+            </p>
+        </section>
+        <!-- USABILITY TESTING END -->
+    </main>
+</body>
+</html>

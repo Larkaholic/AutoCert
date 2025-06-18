@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Query all 'responses' subcollections under any document in 'events'
         const responsesSnapshot = await getDocs(collectionGroup(db, 'responses'));
         if (responsesSnapshot.empty) {
-            tableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4">No responses found.</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4">No responses found.</td></tr>`;
             return;
         }
 
@@ -53,16 +53,20 @@ document.addEventListener('DOMContentLoaded', async () => {
                 eventName = eventDocCache[eventId];
             }
 
+            // Get the response document ID
+            const responseId = docSnap.id;
+
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td class="px-4 py-2 border-b">${name}</td>
                 <td class="px-4 py-2 border-b">${eventName}</td>
                 <td class="px-4 py-2 border-b">${dateIssued}</td>
+                <td class="px-4 py-2 border-b">${responseId}</td>
             `;
             tableBody.appendChild(row);
         }
     } catch (err) {
-        tableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-red-500">Error loading data.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-red-500">Error loading data.</td></tr>`;
         console.error("Error fetching responses:", err);
     }
 });
