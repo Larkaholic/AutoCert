@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Form Builder</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="/styles/styles.css">
+  <link rel="stylesheet" href="./styles/styles.css">
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -14,7 +14,7 @@
   <div class="glass flex flex-col justify-between p-8 mt-8 ml-8 max-w-xs rounded-xl h-[90vh]">
     <div>
       <div class="mb-10">
-        <img src="/images/inttoLogo.png" alt="into logo" class="w-32 h-auto">
+        <img src="./images/inttoLogo.png" alt="into logo" class="w-32 h-auto">
         <div class="text-xs text-white mt-2 ml-1">Innovation & Technology Transfer Office</div>
       </div>
       <div class="flex flex-col gap-6 mt-16">
@@ -57,7 +57,7 @@
     
     <!-- Questions Section -->
     <h2 class="text-xl font-semibold mb-4 border-b border-gray-600 pb-2">Feedback Questions</h2>
-    <form id="questionForm" class="flex flex-col gap-6 overflow-y-auto max-h-[45vh]">
+    <form id="questionForm" class="flex flex-col gap-6 overflow-y-auto max-h-[45vh] custom-scrollbar">
       <!-- questions will appear here -->
     </form>
     <div class="flex justify-center mt-4">
@@ -125,6 +125,8 @@
               <option value="text" style="background-color: #232b2b;">Text</option>
               <option value="rating" style="background-color: #232b2b;">Rating (1-5)</option>
               <option value="textarea" style="background-color: #232b2b;">Long Text</option>
+              <option value="college" style="background-color: #232b2b;">College/Department</option>
+              <option value="likelihood" style="background-color: #232b2b;">Likelihood Scale</option>
           </select>
           <button type="button" class="remove-btn text-red-600 hover:underline">Remove</button>
         `;
@@ -178,12 +180,32 @@
         // Save to Firebase
         db.collection("events").doc(eventTitle).set(eventDetails, { merge: true })
         .then(() => {
-          // Redirect to certificate builder after saving
-          window.location.href = `certificate-builder.html?event=${encodeURIComponent(eventTitle)}`;
+            // Generate the feedback form URL based on current location
+            let feedbackUrl;
+            
+            // Always use lowercase filename for GitHub Pages compatibility
+            feedbackUrl = `./feedback-form-user.html?event=${encodeURIComponent(eventTitle)}`;
+            
+            // Display feedback form URL or QR code 
+            const output = document.getElementById('output');
+            if (output) {
+                output.classList.remove("hidden");
+                output.innerHTML = `
+                    <div class="p-4 bg-black/20 rounded-xl border border-[#3be382] mb-4">
+                        <p class="text-white mb-2">Feedback form created! Share this URL with attendees:</p>
+                        <div class="bg-white/10 p-2 rounded mb-2 break-all">
+                            <a href="${feedbackUrl}" target="_blank" class="text-[#3be382] hover:underline">${window.location.origin}${window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'))}/${feedbackUrl}</a>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Redirect to certificate builder after saving
+            window.location.href = `certificate-builder.html?event=${encodeURIComponent(eventTitle)}`;
         })
         .catch((error) => {
-          output.classList.remove("hidden");
-          output.textContent = `Error saving to Firebase: ${error.message}`;
+            output.classList.remove("hidden");
+            output.textContent = `Error saving to Firebase: ${error.message}`;
         });
       });
 
@@ -220,6 +242,8 @@
                       <option value="text" style="background-color: #232b2b;"${q.type === "text" ? " selected" : ""}>Text</option>
                       <option value="rating" style="background-color: #232b2b;"${q.type === "rating" ? " selected" : ""}>Rating (1-5)</option>
                       <option value="textarea" style="background-color: #232b2b;"${q.type === "textarea" ? " selected" : ""}>Long Text</option>
+                      <option value="college" style="background-color: #232b2b;"${q.type === "college" ? " selected" : ""}>College/Department</option>
+                      <option value="likelihood" style="background-color: #232b2b;"${q.type === "likelihood" ? " selected" : ""}>Likelihood Scale</option>
                   </select>
                   <button type="button" class="remove-btn text-red-600 hover:underline">Remove</button>
                 `;

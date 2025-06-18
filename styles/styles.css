@@ -58,3 +58,7 @@ body {
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
+
+.feedbackSelectEvent {
+  /* height: 100px; */
+}

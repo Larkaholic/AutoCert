@@ -323,6 +323,6 @@ document.addEventListener('DOMContentLoaded', function() {
     layer.add(instructionText);
     layer.draw();
     
-    // Load existing placement if available
+    // Load existing
     loadExistingPlacement();
 });
