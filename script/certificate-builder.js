@@ -233,6 +233,11 @@ document.getElementById('savePlacementBtn').addEventListener('click', async func
         }, { merge: true });
         document.getElementById('saveStatus').textContent = "Placement saved successfully!";
         setTimeout(() => document.getElementById('saveStatus').textContent = "", 3000);
+        
+        // Open QR code in new window instead of showing modal
+        const qrUrl = `qr.html?event=${encodeURIComponent(eventName)}`;
+        window.open(qrUrl, '_blank', 'width=400,height=500');
+        
     } catch (e) {
         document.getElementById('saveStatus').textContent = "Failed to save placement: " + e.message;
     }
