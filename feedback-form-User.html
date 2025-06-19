@@ -44,7 +44,7 @@
             <div class="flex justify-center items-center p-8">
               <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#3be382]"></div>
             </div>
-            <!-- yo! this is where we'll add all the questions later -->
+            <!-- questions will be inserted here dynamically -->
           </div>
         </form>
       </div>
@@ -57,7 +57,7 @@
       </div>
     </div>
     
-    <!-- thanks for answering! -->
+    <!-- salamat message -->
     <div id="thankYouMessage" class="hidden text-center">
       <h2 class="text-2xl font-bold text-[#3be382] mb-4">Thank You!</h2>
       <p class="text-white mb-6">Your feedback has been submitted successfully.</p>
@@ -67,7 +67,7 @@
       <p id="certStatus" class="text-sm text-white mt-2"></p>
     </div>
 
-    <!-- where we store the certificate temporarily -->
+    <!-- hidden certificate container -->
     <div id="certificateContainer" class="hidden"></div>
   </div>
 
@@ -109,7 +109,7 @@
       details.textContent = "Please complete this form to provide your feedback.";
     }
     
-    // let's make sure the certificate maker is ready to go
+    // check if certificate generator is loaded
     function checkCertificateGenerator() {
       const generatorLoaded = window.CertificateGenerator && typeof window.CertificateGenerator.generate === 'function';
       const statusText = document.getElementById('certStatus');
@@ -136,7 +136,7 @@
                 return;
             }
             
-            // oops, looks like this form is past its due date
+            // check if form has expired
             const currentEventData = doc.data();
             const expiresAt = currentEventData.expiresAt ? new Date(currentEventData.expiresAt) : null;
             const now = new Date();
@@ -160,17 +160,20 @@
             
             questionsContainer.innerHTML = '';
             
-            // let's create the questions one by one
+            // Add questions to the form - each in its own card
             questions.forEach((q, index) => {
+              // Create card container for this question
               const questionCard = document.createElement('div');
               questionCard.className = 'bg-black/30 rounded-xl p-6 shadow-lg border border-gray-700';
               questionCard.id = `question_card_${index}`;
               
+              // Add question number
               const questionNumber = document.createElement('div');
               questionNumber.className = 'text-[#3be382] text-sm font-semibold mb-1';
               questionNumber.textContent = `Question ${index + 1}`;
               questionCard.appendChild(questionNumber);
               
+              // Create question label
               const label = document.createElement('label');
               label.className = 'block text-white text-lg font-bold mb-4';
               label.textContent = q.text;
@@ -178,7 +181,7 @@
               questionCard.appendChild(label);
               
               if (q.type === 'rating') {
-                // hey, let's make a nice rating scale from 1-5
+                // Create rating scale (1-5)
                 const ratingDiv = document.createElement('div');
                 ratingDiv.className = 'flex justify-between items-center gap-1 px-8';
                 
@@ -206,12 +209,14 @@
                 
                 questionCard.appendChild(ratingDiv);
                 
+                // Add rating scale labels
                 const ratingLabels = document.createElement('div');
                 ratingLabels.className = 'flex justify-between text-xs text-gray-400 mt-2 px-6';
                 ratingLabels.innerHTML = '<span>Poor</span><span>Excellent</span>';
                 questionCard.appendChild(ratingLabels);
                 
               } else if (q.type === 'textarea') {
+                // Create text area for longer responses
                 const textarea = document.createElement('textarea');
                 textarea.id = `question_${index}`;
                 textarea.name = `question_${index}`;
@@ -256,6 +261,7 @@
                 
                 questionCard.appendChild(likelihoodDiv);
               } else {
+                // Create text input (default)
                 const input = document.createElement('input');
                 input.type = 'text';
                 input.id = `question_${index}`;
@@ -266,6 +272,7 @@
                 questionCard.appendChild(input);
               }
               
+              // Add the card to the container
               questionsContainer.appendChild(questionCard);
             });
         } catch (error) {
@@ -274,9 +281,9 @@
         }
     }
     
-    // form submission handler
+    // Form submission handler
     document.getElementById('submitBtn').addEventListener('click', async function() {
-      // quick check - is everything filled out?
+      // Check if form is valid
       if (!form.checkValidity()) {
         form.reportValidity();
         return;
@@ -288,7 +295,7 @@
         return;
       }
       
-      // grab all the answers
+      // Collect responses
       const responses = [];
       const questions = eventData.questions || [];
       
@@ -298,13 +305,14 @@
           if (selectedRating) {
             responses.push({
               question: q.text,
-              answer: parseInt(selectedRating.value),
+              answer: parseInt(selectedRating.value), // Convert rating value to integer
               type: q.type
             });
           } else {
+            // Handle case when no rating is selected
             responses.push({
               question: q.text,
-              answer: 0,
+              answer: 0, // Default value if no rating selected
               type: q.type
             });
           }
@@ -329,9 +337,9 @@
         }
       });
       
-      console.log('responses to be submitted:', responses);
+      console.log('Responses to be submitted:', responses); // Add this for debugging
       
-      // sweet! let's save everything to our database
+      // Save responses to Firestore
       try {
         const docRef = await db.collection("events").doc(eventName).collection("responses").add({
           participantName,
@@ -339,9 +347,9 @@
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
         
-        console.log('feedback submitted with id:', docRef.id);
+        console.log('Feedback submitted with ID:', docRef.id); // Add this for confirmation
         
-        // alright, hide the form and show the thank you message
+        // Hide form, show thank you message
         form.classList.add('hidden');
         participantNameInput.parentElement.classList.add('hidden');
         document.getElementById('submitBtn').classList.add('hidden');
@@ -352,20 +360,23 @@
       }
     });
     
+    // Remove the existing submit handler from the form to avoid double submission
     form.addEventListener('submit', function(e) {
-      e.preventDefault();
+      e.preventDefault(); // Just prevent default, actual submission is handled by button click
     });
     
-    // time to make that certificate!
+    // Certificate download handler
     downloadCertBtn.addEventListener('click', async function() {
       certStatus.textContent = "Generating your certificate...";
       downloadCertBtn.disabled = true;
       
       try {
+        // Ensure certificate generator is loaded
         if (!checkCertificateGenerator()) {
           throw new Error("Certificate generator not available. Please try again later.");
         }
         
+        // Get the latest event data
         const eventDoc = await db.collection("events").doc(eventName).get();
         if (!eventDoc.exists) {
           throw new Error("Event not found");
@@ -374,6 +385,7 @@
         const updatedEventData = eventDoc.data();
         console.log("Retrieved event data:", updatedEventData);
         
+        // Verify we have the necessary data
         if (!updatedEventData.certificateUrl) {
           throw new Error("Certificate template not configured");
         }
@@ -384,14 +396,14 @@
         
         const participantName = participantNameInput.value.trim();
         
-        // alright, let's create that certificate
+        // Generate the certificate
         const certificateDataURL = await window.CertificateGenerator.generate({
           certificateUrl: updatedEventData.certificateUrl,
           namePlacement: updatedEventData.namePlacement,
           participantName: participantName
         });
         
-        // here's your certificate!
+        // Download the certificate
         window.CertificateGenerator.download(certificateDataURL, `${eventName}-certificate.jpg`);
         
         certStatus.textContent = "Certificate downloaded!";
@@ -405,7 +417,9 @@
       }
     });
     
+    // Initialize when DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
+      // Re-assign form variable to ensure it's available after DOM is loaded
       const refreshedForm = document.getElementById('feedbackForm');
       if (refreshedForm && !form) {
         form = refreshedForm;
@@ -413,10 +427,12 @@
       
       loadQuestions();
       
+      // Check dependencies
       if (typeof Konva === 'undefined') {
         console.error("Konva library not loaded!");
       }
       
+      // Wait a bit for the certificate generator to load
       setTimeout(checkCertificateGenerator, 1000);
     });
   </script>

@@ -1,6 +1,6 @@
 async function exportToCSV(eventName) {
     try {
-        // Fetch event data and responses
+        // fucking fetching
         const eventDoc = await firebase.firestore().collection("events").doc(eventName).get();
         const responsesSnapshot = await firebase.firestore().collection("events").doc(eventName)
             .collection("responses").get();
@@ -14,43 +14,42 @@ async function exportToCSV(eventName) {
         const responses = responsesSnapshot.docs.map(doc => doc.data());
         const questions = eventData.questions || [];
 
-        // Build CSV Header
+        // build CSV Header
         let csvContent = "Event Name: " + eventName + "\n";
         csvContent += "Export Date: " + new Date().toLocaleString() + "\n\n";
 
-        // Add main data headers
+        // add main data headers
         let headers = ["Participant Name", "Timestamp"];
         questions.forEach((q, idx) => headers.push(`Question ${idx + 1}`));
         csvContent += headers.join(",") + "\n";
 
-        // Add response rows
+        // add response rows
         responses.forEach(response => {
             let row = [
                 response.participantName || "Anonymous",
                 response.timestamp ? new Date(response.timestamp.toDate()).toLocaleString() : ""
             ];
 
-            // Add answers
+            // add answers
             questions.forEach((_, idx) => {
                 const answer = response.responses[idx]?.answer || "";
-                // Escape quotes and commas in answers
                 row.push(`"${answer.toString().replace(/"/g, '""')}"`);
             });
 
             csvContent += row.join(",") + "\n";
         });
 
-        // Add question details section
+        // add question details section
         csvContent += "\nQuestion Details:\n";
         questions.forEach((q, idx) => {
             csvContent += `Question ${idx + 1}: ${q.text} (${q.type})\n`;
         });
 
-        // Add response summary
+        // add response summary
         csvContent += "\nResponse Summary:\n";
         csvContent += `Total Responses: ${responses.length}\n`;
 
-        // Calculate averages for rating questions
+        // calculate averages for rating questions
         questions.forEach((q, idx) => {
             if (q.type === 'rating') {
                 const ratings = responses
@@ -65,7 +64,7 @@ async function exportToCSV(eventName) {
             }
         });
 
-        // Create and trigger download
+        // create and trigger download
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
@@ -81,5 +80,4 @@ async function exportToCSV(eventName) {
     }
 }
 
-// Make function available globally
 window.exportToCSV = exportToCSV;

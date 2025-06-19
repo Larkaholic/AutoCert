@@ -1,6 +1,6 @@
 let stage, layer, nameText, bgImageObj;
 let actualImageWidth, actualImageHeight;
-let expirationMinutes = 30; // Default 30 minutes
+let expirationMinutes = 30; // default 30 minutes
 
 function getResponsiveSize() {
     const container = document.getElementById('konvaContainer');
@@ -247,7 +247,6 @@ document.getElementById('savePlacementBtn').addEventListener('click', async func
         document.getElementById('saveStatus').textContent = "Placement saved successfully!";
         setTimeout(() => document.getElementById('saveStatus').textContent = "", 3000);
         
-        // Open QR code in new window instead of showing modal
         const qrUrl = `qr.html?event=${encodeURIComponent(eventName)}`;
         window.open(qrUrl, '_blank', 'width=400,height=500');
         
@@ -314,9 +313,8 @@ document.addEventListener('DOMContentLoaded', function() {
     loadExistingPlacement();
 });
 
-// Initialize event handlers when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize with a blank stage
+    // initialize with a blank stage
     const { width, height } = getResponsiveSize();
     stage = new Konva.Stage({
         container: 'konvaContainer',
@@ -326,7 +324,7 @@ document.addEventListener('DOMContentLoaded', function() {
     layer = new Konva.Layer();
     stage.add(layer);
     
-    // Draw text indicating to upload an image
+    // draw text indicating to upload an image
     const instructionText = new Konva.Text({
         text: 'Upload a certificate template\nto begin',
         x: width / 2,
@@ -341,10 +339,8 @@ document.addEventListener('DOMContentLoaded', function() {
     layer.add(instructionText);
     layer.draw();
     
-    // Load existing
     loadExistingPlacement();
     
-    // Add expiration time controls
     document.getElementById('decreaseTime').addEventListener('click', () => {
         if (expirationMinutes > 30) {
             expirationMinutes -= 30;
@@ -357,6 +353,5 @@ document.addEventListener('DOMContentLoaded', function() {
         updateExpirationDisplay();
     });
 
-    // Initialize display
     updateExpirationDisplay();
 });
