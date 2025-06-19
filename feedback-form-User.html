@@ -24,7 +24,7 @@
 
     <div class="overflow-y-auto">
            
-      <!-- Event details section -->
+      <!-- event details section -->
       <div class="mb-6 bg-black/40 rounded-xl p-6 border-l-[6px] border-l-[#3be382]">
         <h1 id="eventTitle" class="text-2xl font-bold text-white mb-2">Event Feedback Form</h1>
         <div class="max-h-20 overflow-auto custom-scrollbar">
@@ -34,7 +34,6 @@
       </div>
       
       <div class="flex-grow custom-scrollbar" style="max-height: calc(100% - 180px);">
-        <!-- Name Input Field in Card -->
         <div class="mb-6 bg-black/30 rounded-xl p-6 shadow-lg border border-gray-700">
           <label for="participantName" class="block text-white text-lg font-bold mb-3">Your Name</label>
           <input type="text" id="participantName" class="w-full p-3 border border-gray-400 rounded-xl shadow-lg bg-transparent text-white placeholder-gray-400" placeholder="Enter your full name" required>
@@ -42,16 +41,14 @@
         
         <form id="feedbackForm" class="space-y-6">
           <div id="questionsContainer" class="space-y-6">
-            <!-- Loading indicator -->
             <div class="flex justify-center items-center p-8">
               <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#3be382]"></div>
             </div>
-            <!-- Questions will be inserted here dynamically -->
+            <!-- yo! this is where we'll add all the questions later -->
           </div>
         </form>
       </div>
     </div>
-    <!-- Button container fixed at bottom with proper padding -->
     <div class="pt-6 pb-2 mt-auto">
       <div class="flex justify-center">
         <button type="submit" id="submitBtn" form="feedbackForm" class="bg-[#232b2b] border border-[#3be382] text-white font-bold px-8 py-3 rounded-xl hover:bg-[#1a1a1a] transition shadow-lg w-full md:w-auto">
@@ -60,7 +57,7 @@
       </div>
     </div>
     
-    <!-- Thank you message -->
+    <!-- thanks for answering! -->
     <div id="thankYouMessage" class="hidden text-center">
       <h2 class="text-2xl font-bold text-[#3be382] mb-4">Thank You!</h2>
       <p class="text-white mb-6">Your feedback has been submitted successfully.</p>
@@ -70,12 +67,11 @@
       <p id="certStatus" class="text-sm text-white mt-2"></p>
     </div>
 
-    <!-- Hidden certificate container -->
+    <!-- where we store the certificate temporarily -->
     <div id="certificateContainer" class="hidden"></div>
   </div>
 
   <script>
-    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyC92G1LybSWu3463j1Wi0yjZaTzuiHcIMk",
       authDomain: "autocert-8319d.firebaseapp.com",
@@ -86,15 +82,11 @@
       measurementId: "G-Q7Z8VF2N2W"
     };
     
-    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Get event name from URL
     const params = new URLSearchParams(window.location.search);
     const eventName = params.get('event') || '';
-    
-    // DOM elements - Define form early to avoid the "form is not defined" error
     const form = document.getElementById('feedbackForm');
     const questionsContainer = document.getElementById('questionsContainer');
     const thankYouMessage = document.getElementById('thankYouMessage');
@@ -102,28 +94,22 @@
     const participantNameInput = document.getElementById('participantName');
     const certStatus = document.getElementById('certStatus');
     
-    // Store event data globally
     let eventData = null;
     
-    // Update event details in the UI
     function updateEventDetails(eventData) {
-      // Set event title
       document.getElementById('eventTitle').textContent = eventName || 'Event Feedback Form';
-      
-      // Set event description (if available)
       const description = document.getElementById('eventDescription');
       if (eventData && eventData.description) {
         description.textContent = eventData.description;
       } else {
         description.textContent = "This form is for the attendees of the event. This is meant to take note of the attendance of those who attended, as well as provide feedback for the services of the Innovation and Technology Transfer Office, as well as the program itself. This form shall also be used to determine those who will be getting certificates.";
       }
-      
-      // Set event details
+
       const details = document.getElementById('eventDetails');
       details.textContent = "Please complete this form to provide your feedback.";
     }
     
-    // Check if certificate generator is loaded
+    // let's make sure the certificate maker is ready to go
     function checkCertificateGenerator() {
       const generatorLoaded = window.CertificateGenerator && typeof window.CertificateGenerator.generate === 'function';
       const statusText = document.getElementById('certStatus');
@@ -137,7 +123,6 @@
       }
     }
     
-    // Load questions from Firestore
     async function loadQuestions() {
         if (!eventName) {
             questionsContainer.innerHTML = '<div class="bg-black/30 rounded-xl p-6 shadow-lg border border-red-500"><p class="text-red-500">Error: No event specified</p></div>';
@@ -151,17 +136,15 @@
                 return;
             }
             
-            // Check if form has expired
+            // oops, looks like this form is past its due date
             const currentEventData = doc.data();
             const expiresAt = currentEventData.expiresAt ? new Date(currentEventData.expiresAt) : null;
             const now = new Date();
             
-            // Update event details in UI
             updateEventDetails(currentEventData);
             
             if (expiresAt && now > expiresAt) {
                 questionsContainer.innerHTML = '<div class="bg-black/30 rounded-xl p-6 shadow-lg border border-red-500"><p class="text-red-500">This feedback form has expired</p></div>';
-                // Hide form elements
                 document.getElementById('participantName').parentElement.classList.add('hidden');
                 document.getElementById('submitBtn').classList.add('hidden');
                 return;
@@ -175,23 +158,19 @@
               return;
             }
             
-            // Clear loading spinner
             questionsContainer.innerHTML = '';
             
-            // Add questions to the form - each in its own card
+            // let's create the questions one by one
             questions.forEach((q, index) => {
-              // Create card container for this question
               const questionCard = document.createElement('div');
               questionCard.className = 'bg-black/30 rounded-xl p-6 shadow-lg border border-gray-700';
               questionCard.id = `question_card_${index}`;
               
-              // Add question number
               const questionNumber = document.createElement('div');
               questionNumber.className = 'text-[#3be382] text-sm font-semibold mb-1';
               questionNumber.textContent = `Question ${index + 1}`;
               questionCard.appendChild(questionNumber);
               
-              // Create question label
               const label = document.createElement('label');
               label.className = 'block text-white text-lg font-bold mb-4';
               label.textContent = q.text;
@@ -199,7 +178,7 @@
               questionCard.appendChild(label);
               
               if (q.type === 'rating') {
-                // Create rating scale (1-5)
+                // hey, let's make a nice rating scale from 1-5
                 const ratingDiv = document.createElement('div');
                 ratingDiv.className = 'flex justify-between items-center gap-1 px-8';
                 
@@ -227,14 +206,12 @@
                 
                 questionCard.appendChild(ratingDiv);
                 
-                // Add rating scale labels
                 const ratingLabels = document.createElement('div');
                 ratingLabels.className = 'flex justify-between text-xs text-gray-400 mt-2 px-6';
                 ratingLabels.innerHTML = '<span>Poor</span><span>Excellent</span>';
                 questionCard.appendChild(ratingLabels);
                 
               } else if (q.type === 'textarea') {
-                // Create text area for longer responses
                 const textarea = document.createElement('textarea');
                 textarea.id = `question_${index}`;
                 textarea.name = `question_${index}`;
@@ -279,7 +256,6 @@
                 
                 questionCard.appendChild(likelihoodDiv);
               } else {
-                // Create text input (default)
                 const input = document.createElement('input');
                 input.type = 'text';
                 input.id = `question_${index}`;
@@ -290,7 +266,6 @@
                 questionCard.appendChild(input);
               }
               
-              // Add the card to the container
               questionsContainer.appendChild(questionCard);
             });
         } catch (error) {
@@ -299,9 +274,9 @@
         }
     }
     
-    // Form submission handler
+    // form submission handler
     document.getElementById('submitBtn').addEventListener('click', async function() {
-      // Check if form is valid
+      // quick check - is everything filled out?
       if (!form.checkValidity()) {
         form.reportValidity();
         return;
@@ -313,7 +288,7 @@
         return;
       }
       
-      // Collect responses
+      // grab all the answers
       const responses = [];
       const questions = eventData.questions || [];
       
@@ -323,14 +298,13 @@
           if (selectedRating) {
             responses.push({
               question: q.text,
-              answer: parseInt(selectedRating.value), // Convert rating value to integer
+              answer: parseInt(selectedRating.value),
               type: q.type
             });
           } else {
-            // Handle case when no rating is selected
             responses.push({
               question: q.text,
-              answer: 0, // Default value if no rating selected
+              answer: 0,
               type: q.type
             });
           }
@@ -355,9 +329,9 @@
         }
       });
       
-      console.log('Responses to be submitted:', responses); // Add this for debugging
+      console.log('responses to be submitted:', responses);
       
-      // Save responses to Firestore
+      // sweet! let's save everything to our database
       try {
         const docRef = await db.collection("events").doc(eventName).collection("responses").add({
           participantName,
@@ -365,9 +339,9 @@
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
         
-        console.log('Feedback submitted with ID:', docRef.id); // Add this for confirmation
+        console.log('feedback submitted with id:', docRef.id);
         
-        // Hide form, show thank you message
+        // alright, hide the form and show the thank you message
         form.classList.add('hidden');
         participantNameInput.parentElement.classList.add('hidden');
         document.getElementById('submitBtn').classList.add('hidden');
@@ -378,23 +352,20 @@
       }
     });
     
-    // Remove the existing submit handler from the form to avoid double submission
     form.addEventListener('submit', function(e) {
-      e.preventDefault(); // Just prevent default, actual submission is handled by button click
+      e.preventDefault();
     });
     
-    // Certificate download handler
+    // time to make that certificate!
     downloadCertBtn.addEventListener('click', async function() {
       certStatus.textContent = "Generating your certificate...";
       downloadCertBtn.disabled = true;
       
       try {
-        // Ensure certificate generator is loaded
         if (!checkCertificateGenerator()) {
           throw new Error("Certificate generator not available. Please try again later.");
         }
         
-        // Get the latest event data
         const eventDoc = await db.collection("events").doc(eventName).get();
         if (!eventDoc.exists) {
           throw new Error("Event not found");
@@ -403,7 +374,6 @@
         const updatedEventData = eventDoc.data();
         console.log("Retrieved event data:", updatedEventData);
         
-        // Verify we have the necessary data
         if (!updatedEventData.certificateUrl) {
           throw new Error("Certificate template not configured");
         }
@@ -414,14 +384,14 @@
         
         const participantName = participantNameInput.value.trim();
         
-        // Generate the certificate
+        // alright, let's create that certificate
         const certificateDataURL = await window.CertificateGenerator.generate({
           certificateUrl: updatedEventData.certificateUrl,
           namePlacement: updatedEventData.namePlacement,
           participantName: participantName
         });
         
-        // Download the certificate
+        // here's your certificate!
         window.CertificateGenerator.download(certificateDataURL, `${eventName}-certificate.jpg`);
         
         certStatus.textContent = "Certificate downloaded!";
@@ -435,9 +405,7 @@
       }
     });
     
-    // Initialize when DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
-      // Re-assign form variable to ensure it's available after DOM is loaded
       const refreshedForm = document.getElementById('feedbackForm');
       if (refreshedForm && !form) {
         form = refreshedForm;
@@ -445,12 +413,10 @@
       
       loadQuestions();
       
-      // Check dependencies
       if (typeof Konva === 'undefined') {
         console.error("Konva library not loaded!");
       }
       
-      // Wait a bit for the certificate generator to load
       setTimeout(checkCertificateGenerator, 1000);
     });
   </script>

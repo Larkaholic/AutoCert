@@ -8,7 +8,6 @@ const firebaseConfig = {
     measurementId: "G-Q7Z8VF2N2W"
 };
 
-// Initialize Firebase if not already initialized
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
@@ -17,7 +16,7 @@ const db = firebase.firestore();
 const eventSelect = document.getElementById("eventSelect");
 const resultsContainer = document.getElementById("resultsContainer");
 
-// Likelihood options constant
+// likelihood options
 const LIKELIHOOD_OPTIONS = [
     'Very Likely',
     'Likely',
@@ -26,7 +25,7 @@ const LIKELIHOOD_OPTIONS = [
     'Very Unlikely'
 ];
 
-// Populate event dropdown
+// populate event dropdown
 async function populateEventDropdown() {
     eventSelect.innerHTML = '<option value="">-- Choose an event --</option>';
     try {
@@ -42,7 +41,6 @@ async function populateEventDropdown() {
     }
 }
 
-// Add these functions at the start of the file
 function showAnswersModal(question, answers) {
     const modal = document.getElementById('answersModal');
     const modalAnswers = document.getElementById('modalAnswers');
@@ -105,20 +103,19 @@ function showRatingModal(question, ratings) {
     modal.classList.add('show');
 }
 
-// Fetch and display responses for the selected event
+// fetch and display responses for the selected event
 async function displayEventResponses(eventId) {
     resultsContainer.innerHTML = "<div class='animate-pulse'>Loading responses...</div>";
     if (!eventId) return;
 
     try {
-        // Fetch event data for questions
+        // fuck fetching
         const eventDoc = await db.collection("events").doc(eventId).get();
         if (!eventDoc.exists) {
             resultsContainer.innerHTML = "<div class='text-red-600'>Event not found.</div>";
             return;
         }
 
-        // Fetch all responses for this event
         const responsesSnapshot = await db.collection("events").doc(eventId)
             .collection("responses").get();
 
@@ -127,11 +124,9 @@ async function displayEventResponses(eventId) {
             return;
         }
 
-        // Process responses
         const questions = eventDoc.data().questions || [];
         const responses = responsesSnapshot.docs.map(doc => doc.data());
         
-        // Create result display
         resultsContainer.innerHTML = '';
         
         questions.forEach((question, idx) => {
@@ -143,7 +138,6 @@ async function displayEventResponses(eventId) {
                 <p class="text-white text-lg mb-4">${question.text}</p>
             `;
 
-            // Process answers based on question type
             if (question.type === 'likelihood') {
                 const counts = LIKELIHOOD_OPTIONS.reduce((acc, opt) => ({...acc, [opt]: 0}), {});
                 
@@ -183,7 +177,6 @@ async function displayEventResponses(eventId) {
 
                 questionDiv.onclick = () => showRatingModal(question.text, ratings);
             } else {
-                // For text responses, show only first answer
                 const answers = responses
                     .map(r => r.responses[idx]?.answer)
                     .filter(a => a);
@@ -196,7 +189,6 @@ async function displayEventResponses(eventId) {
                         </div>
                     `;
 
-                    // Add click handler to show all answers
                     questionDiv.onclick = () => showAnswersModal(question.text, answers);
                 } else {
                     questionDiv.innerHTML += `
@@ -216,14 +208,11 @@ async function displayEventResponses(eventId) {
     }
 }
 
-// Event listeners
 eventSelect.addEventListener("change", (e) => {
     displayEventResponses(e.target.value);
 });
 
-// On load
 populateEventDropdown();
 
-// Make functions globally available
 window.showAnswersModal = showAnswersModal;
 window.closeAnswersModal = closeAnswersModal;

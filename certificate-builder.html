@@ -13,7 +13,7 @@
   <script src="./script/certificate-generator.js" defer></script>
 </head>
 <body class="flex flex-row min-h-screen bg-gradient-to-tr from-[#000000] from-35% to-[#00691c]">
-  <!-- Sidebar -->
+  <!-- sidebar -->
   <div class="glass flex flex-col justify-between p-8 mt-8 ml-8 max-w-xs rounded-xl h-[90vh]">
     <div>
       <div class="mb-10">
@@ -32,14 +32,14 @@
       </button>
     </div>
   </div>
-  <!-- Main Content -->
+  <!-- main content -->
   <div class="flex-1 flex items-center justify-center mx-8 my-8">
     <div class="w-full h-full max-w-5xl max-h-[90vh] flex flex-col justify-between border border-[#3be382] rounded-2xl p-10 bg-transparent relative"
          style="box-shadow: 0 2px 32px 0 rgba(0,0,0,0.12);">
       <h1 class="text-center text-4xl font-extrabold mb-10 text-white">Certificate Builder</h1>
       <div class="flex flex-col gap-8">
         <div class="flex justify-between items-start">
-          <!-- Left side: Upload controls -->
+          <!-- upload controls -->
           <div>
             <label class="block font-bold text-lg mb-4 text-white">Upload Certificate Template</label>
             <div class="flex flex-row gap-6 items-center">
@@ -49,7 +49,7 @@
             </div>
           </div>
 
-          <!-- Right side: Expiration controls -->
+          <!-- expiration controls -->
           <div>
             <label class="block font-bold text-lg mb-4 text-white">Form Expiration</label>
             <div class="flex flex-row items-center gap-4">
@@ -69,7 +69,7 @@
         <div id="konvaContainer"
           class="border border-[#3be382] rounded-xl bg-gradient-to-br from-white/5 to-[#3be382]/5 flex justify-center items-center w-full"
           style="height: 420px;">
-          <!-- Konva canvas will be rendered here -->
+          <!-- konva canvas will be rendered here -->
         </div>
         <div class="text-white text-sm mt-2 flex items-center gap-2">
           <span class="bg-[#3be382] text-black px-2 py-1 rounded-full text-xs">TIP</span>
@@ -88,7 +88,7 @@
     </div>
   </div>
   
-  <!-- QR Code Modal -->
+  <!-- qr code modal -->
   <div id="qrModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
     <div class="bg-white rounded-xl p-8 flex flex-col items-center">
       <div id="qrCodeContainer" class="mb-4"></div>
@@ -96,12 +96,12 @@
     </div>
   </div>
 
-  <!-- Certificate Preview Modal -->
+  <!-- certificate preview modal -->
   <div id="previewModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
     <div class="bg-white rounded-xl p-8 flex flex-col items-center max-w-4xl">
       <h3 class="text-xl font-bold mb-4">Certificate Preview</h3>
       <div id="previewContainer" class="border border-gray-300 mb-4 overflow-hidden">
-        <!-- Preview will be rendered here -->
+        <!-- preview will be rendered here -->
       </div>
       <div class="flex gap-4">
         <button id="downloadCertBtn" class="mt-4 px-6 py-2 rounded bg-[#232b2b] text-white border border-[#3be382] hover:bg-[#1a1a1a]">
@@ -138,7 +138,6 @@
       };
     }
 
-    // Cloudinary config (replace with your own)
     const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/ds0pv2kvy/image/upload';
     const CLOUDINARY_UPLOAD_PRESET = 'autocert_unsigned';
 
@@ -151,7 +150,6 @@
       appId: "1:941021055631:web:ffbfae2bce3856f742fefa",
       measurementId: "G-Q7Z8VF2N2W"
     };
-    // Ensure firebase is available globally
     if (typeof firebase === "undefined") {
       alert("Firebase SDK not loaded. Please check your <script> includes in <head>.");
       throw new Error("Firebase SDK not loaded.");
@@ -161,7 +159,6 @@
     }
     const db = firebase.firestore();
 
-    // Get event name from URL
     const params = new URLSearchParams(window.location.search);
     const eventName = params.get('event') || '';
 
@@ -169,13 +166,11 @@
       deployBtn.addEventListener('click', async function(e) {
         e.preventDefault();
 
-        // Validate file input
         if (!templateUpload.files || !templateUpload.files[0]) {
           alert('Please select a certificate image to upload.');
           return;
         }
 
-        // Upload to Cloudinary
         const formData = new FormData();
         formData.append('file', templateUpload.files[0]);
         formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
@@ -199,7 +194,6 @@
           return;
         }
 
-        // Test the Cloudinary URL before saving
         try {
           const testRes = await fetch(cloudinaryUrl, { method: 'HEAD' });
           if (!testRes.ok) {
@@ -211,19 +205,17 @@
           return;
         }
 
-        // Save Cloudinary URL to Firestore event
         try {
           await db.collection("events").doc(eventName).set({
             certificateUrl: cloudinaryUrl
           }, { merge: true });
           
-          // Add this: Test certificate generation with the uploaded template
           const eventData = await db.collection("events").doc(eventName).get();
           const namePlacement = eventData.data().namePlacement;
           
           if (namePlacement) {
             try {
-              // Test certificate generation
+              // test certificate generation
               const testCertURL = await CertificateGenerator.generate({
                 certificateUrl: cloudinaryUrl,
                 namePlacement: namePlacement,
@@ -233,7 +225,6 @@
               console.log("Certificate generation test successful");
             } catch (genError) {
               console.error("Certificate generation test failed:", genError);
-              // Continue anyway since this is just a test
             }
           }
           
@@ -273,10 +264,8 @@
 
     if (previewCertBtn) {
       previewCertBtn.addEventListener('click', function() {
-        // Open preview modal
         previewModal.classList.remove('hidden');
 
-        // Render the current certificate state in the preview container
         const stage = new Konva.Stage({
           container: 'previewContainer',
           width: 800,
@@ -286,7 +275,6 @@
         const layer = new Konva.Layer();
         stage.add(layer);
 
-        // Add the uploaded image
         if (templateUpload.files && templateUpload.files[0]) {
           const reader = new FileReader();
           reader.onload = function(evt) {
@@ -308,12 +296,11 @@
           reader.readAsDataURL(templateUpload.files[0]);
         }
 
-        // Add text elements for name and other details
-        // These should match the ones in the editor for accurate preview
+        // these should match the ones in the editor for accurate preview
         const nameText = new Konva.Text({
           x: 50,
           y: 50,
-          text: 'John Doe', // Placeholder text, replace with actual data
+          text: 'John Doe',
           fontSize: 30,
           fontFamily: 'Calibri',
           fill: 'white',
@@ -321,7 +308,7 @@
         });
         layer.add(nameText);
 
-        // Update the stage to show the new elements
+        // update the stage to show the new elements
         layer.draw();
       });
     }
@@ -329,15 +316,13 @@
     if (closePreviewBtn) {
       closePreviewBtn.addEventListener('click', function() {
         previewModal.classList.add('hidden');
-        // Clean up the preview container
         previewContainer.innerHTML = '';
       });
     }
 
     if (downloadCertBtn) {
       downloadCertBtn.addEventListener('click', function() {
-        // Generate the certificate file (e.g., PDF) with the current settings
-        // This is a placeholder implementation, replace with actual file generation logic
+        // Generate the certificate file with the current settings
         const link = document.createElement('a');
         link.href = templateUpload.files.length ? URL.createObjectURL(templateUpload.files[0]) : '#';
         link.download = 'certificate-sample.png';
@@ -345,15 +330,14 @@
       });
     }
 
-    // Add this: Test CertificateGenerator is loaded
     if (typeof CertificateGenerator === 'undefined') {
       console.warn("CertificateGenerator not loaded! Certificate generation may fail.");
     } else {
       console.log("CertificateGenerator loaded successfully");
     }
 
-    // Expiration time controls
-    let expirationTime = 30; // Default to 30 minutes
+    // expiration time controls
+    let expirationTime = 30; // default time
     const updateExpirationDisplay = () => {
       expirationDisplay.textContent = `${expirationTime} ${expirationTime === 1 ? 'min' : 'mins'}`;
     };

@@ -6,7 +6,6 @@
   <title>Form Builder</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="./styles/styles.css">
-  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
@@ -41,7 +40,7 @@
       </ul>
     </div>
     
-    <!-- Event Details Section -->
+    <!-- main section -->
     <div class="mb-6 p-5 bg-black/20 rounded-xl border border-gray-700">
       <h2 class="text-xl font-semibold mb-4 border-b border-gray-600 pb-2">Event Details</h2>
       
@@ -55,7 +54,6 @@
         <textarea id="eventDescription" class="w-full p-3 border border-gray-400 rounded-xl shadow-lg bg-transparent text-white placeholder-gray-400" placeholder="Describe the event..." rows="3"></textarea>
       </div>
     
-    <!-- Questions Section -->
     <h2 class="text-xl font-semibold mb-4 border-b border-gray-600 pb-2">Feedback Questions</h2>
     <form id="questionForm" class="flex flex-col gap-6 overflow-y-auto max-h-[45vh] custom-scrollbar">
       <!-- questions will appear here -->
@@ -74,9 +72,7 @@
     <pre id="output" class="mt-6 bg-gray-100 p-4 rounded text-sm text-gray-800 hidden"></pre>
   </div>
 
-  <!-- Firebase config script -->
   <script>
-    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyC92G1LybSWu3463j1Wi0yjZaTzuiHcIMk",
       authDomain: "autocert-8319d.firebaseapp.com",
@@ -91,7 +87,6 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     
-    // Wait for DOM to be fully loaded
     document.addEventListener('DOMContentLoaded', function() {
       const form = document.getElementById('questionForm');
       const addBtn = document.getElementById('addQuestionBtn');
@@ -105,7 +100,6 @@
       
       let questionCount = 0;
       
-      // Add question button
       addBtn.addEventListener('click', function() {
         const title = eventTitleInput.value.trim();
         
@@ -134,7 +128,6 @@
         form.appendChild(questionDiv);
       });
       
-      // Remove button handler
       form.addEventListener('click', function(e) {
         if (e.target.classList.contains('remove-btn')) {
           const questionDiv = e.target.closest('div');
@@ -142,7 +135,7 @@
         }
       });
       
-      // Save form handler
+      // save form handler
       saveBtn.addEventListener('click', function() {
         const eventTitle = eventTitleInput.value.trim();
         if (!eventTitle) {
@@ -170,23 +163,20 @@
           return;
         }
 
-        // Collect event details
+        // collect event details
         const eventDetails = {
           description: eventDescriptionInput.value.trim(),
           questions: questions,
           lastUpdated: new Date().toISOString()
         };
 
-        // Save to Firebase
+        // funciton to save to firebase
         db.collection("events").doc(eventTitle).set(eventDetails, { merge: true })
         .then(() => {
-            // Generate the feedback form URL based on current location
             let feedbackUrl;
-            
-            // Always use lowercase filename for GitHub Pages compatibility
             feedbackUrl = `./feedback-form-user.html?event=${encodeURIComponent(eventTitle)}`;
             
-            // Display feedback form URL or QR code 
+            // displaying of feedback form using QR code 
             const output = document.getElementById('output');
             if (output) {
                 output.classList.remove("hidden");
@@ -199,8 +189,6 @@
                     </div>
                 `;
             }
-            
-            // Redirect to certificate builder after saving
             window.location.href = `certificate-builder.html?event=${encodeURIComponent(eventTitle)}`;
         })
         .catch((error) => {
@@ -209,7 +197,7 @@
         });
       });
 
-      // Fetch existing event data when page loads or event title changes
+      // fetch existing event data when page loads or event title changes
       function fetchEventData() {
         const eventTitle = eventTitleInput.value.trim();
         if (!eventTitle || eventTitle.length < 3) return;
@@ -222,13 +210,13 @@
             if (doc.exists) {
               const data = doc.data();
               
-              // Populate event details
+              // populate event details
               eventDescriptionInput.value = data.description || '';
               if (data.date) eventDateInput.value = data.date;
               eventLocationInput.value = data.location || '';
               eventOrganizerInput.value = data.organizer || '';
               
-              // Populate questions
+              // populate questions
               const questions = data.questions || [];
               
               questions.forEach(q => {
@@ -257,12 +245,10 @@
           });
       }
       
-      // Call fetchEventData when event title changes
       if (eventTitleInput) {
         eventTitleInput.addEventListener('input', fetchEventData);
       }
       
-      // Initial fetch attempt
       fetchEventData();
     });
   </script>

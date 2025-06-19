@@ -41,7 +41,6 @@
     </style>
 </head>
 <body class="flex flex-row min-h-screen bg-gradient-to-tr from-[#000000] from-35% to-[#00691c]">
-    <!-- Sidebar -->
     <div class="glass flex flex-col justify-between p-8 mt-8 ml-8 max-w-xs rounded-xl h-[90vh]">
         <div>
             <div class="mb-10">
@@ -60,7 +59,7 @@
             </button>
         </div>
     </div>
-    <!-- Main Content -->
+    <!-- main section -->
     <div class="glass flex-1 mx-8 my-8 p-10 rounded-xl shadow-md text-white flex flex-col overflow-y-auto h-[90vh]">
         <h1 class="text-center text-3xl font-bold mb-10">Feedback Results</h1>
         <div class="mb-8 flex justify-between items-center">
@@ -75,18 +74,17 @@
             </button>
         </div>
         <div id="resultsContainer" class="flex-1 overflow-y-auto custom-scrollbar">
-            <!-- Results will be displayed here -->
+            <!-- results will be displayed here -->
         </div>
     </div>
-    <!-- Update Modal Structure -->
     <div id="answersModal" class="modal" onclick="closeAnswersModal()">
         <div class="bg-gray-700 rounded-lg p-6 w-96" onclick="event.stopPropagation()">
             <div id="modalAnswers" class="space-y-2">
-                <!-- Responses will be populated here -->
+                <!-- responses will be displayed here -->
             </div>
         </div>
     </div>
-    <!-- Firebase scripts -->
+
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="./script/firebase.js" type="module"></script>
@@ -101,10 +99,6 @@
                 return;
             }
             exportToCSV(eventName);
-        });
-    </script>
-</body>
-</html>
         });
     </script>
 </body>
