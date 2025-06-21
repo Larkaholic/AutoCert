@@ -126,6 +126,15 @@
         `;
         
         form.appendChild(questionDiv);
+
+        // Add event listener for auto-filling question input if type is college
+        const select = questionDiv.querySelector('select[name="type"]');
+        const input = questionDiv.querySelector('input[name="question"]');
+        select.addEventListener('change', function() {
+          if (select.value === 'college') {
+            input.value = 'College/Department';
+          }
+        });
       });
       
       form.addEventListener('click', function(e) {
@@ -236,6 +245,14 @@
                   <button type="button" class="remove-btn text-red-600 hover:underline">Remove</button>
                 `;
                 form.appendChild(questionDiv);
+                // Add event listener for auto-filling question input if type is college
+                const select = questionDiv.querySelector('select[name="type"]');
+                const input = questionDiv.querySelector('input[name="question"]');
+                select.addEventListener('change', function() {
+                  if (select.value === 'college') {
+                    input.value = 'College/Department';
+                  }
+                });
               });
             }
           })

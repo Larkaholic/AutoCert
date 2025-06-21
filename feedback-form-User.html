@@ -260,6 +260,45 @@
                 });
                 
                 questionCard.appendChild(likelihoodDiv);
+              } else if (q.type === 'college') {
+                // College/Department radio group, responsive
+                const collegeOptions = [
+                  'SHS', 'CITCS', 'CEA', 'CCJE', 'CBA', 'COA', 'CHTM', 'CAS', 'CTE', 'CON', 'Non-UCian', 'Other'
+                ];
+                const collegeDiv = document.createElement('div');
+                collegeDiv.className = 'flex flex-col sm:flex-row sm:flex-wrap gap-4';
+                collegeOptions.forEach(option => {
+                  const optionGroup = document.createElement('div');
+                  optionGroup.className = 'flex items-center gap-2';
+                  const radio = document.createElement('input');
+                  radio.type = 'radio';
+                  radio.name = `question_${index}`;
+                  radio.value = option;
+                  radio.id = `question_${index}_${option.replace(/\W+/g, '')}`;
+                  radio.className = 'form-radio h-5 w-5 text-[#3be382] cursor-pointer';
+                  radio.required = true;
+                  const label = document.createElement('label');
+                  label.htmlFor = radio.id;
+                  label.className = 'text-white cursor-pointer';
+                  label.textContent = option === 'Other' ? 'Other:' : option;
+                  optionGroup.appendChild(radio);
+                  optionGroup.appendChild(label);
+                  if (option === 'Other') {
+                    const otherInput = document.createElement('input');
+                    otherInput.type = 'text';
+                    otherInput.className = 'ml-2 p-1 rounded bg-transparent border border-gray-400 text-white';
+                    otherInput.style.width = '120px';
+                    otherInput.disabled = true;
+                    optionGroup.appendChild(otherInput);
+                    radio.addEventListener('change', function() {
+                      otherInput.disabled = !radio.checked;
+                      if (!radio.checked) otherInput.value = '';
+                    });
+                    // No need to change radio.value, just use otherInput.value on submit
+                  }
+                  collegeDiv.appendChild(optionGroup);
+                });
+                questionCard.appendChild(collegeDiv);
               } else {
                 // Create text input (default)
                 const input = document.createElement('input');
@@ -322,6 +361,24 @@
             responses.push({
               question: q.text,
               answer: selectedOption.value,
+              type: q.type
+            });
+          }
+        } else if (q.type === 'college') {
+          // College/Department: check if 'Other' is selected and use its value
+          const selectedRadio = document.querySelector(`input[name="question_${index}"]:checked`);
+          if (selectedRadio) {
+            let answer = selectedRadio.value;
+            if (answer === 'Other') {
+              // Find the corresponding text input
+              const otherInput = selectedRadio.parentElement.querySelector('input[type="text"]');
+              if (otherInput && otherInput.value.trim()) {
+                answer = otherInput.value.trim();
+              }
+            }
+            responses.push({
+              question: q.text,
+              answer: answer,
               type: q.type
             });
           }

@@ -30,9 +30,17 @@ async function exportToCSV(eventName) {
                 response.timestamp ? new Date(response.timestamp.toDate()).toLocaleString() : ""
             ];
 
-            // add answers
-            questions.forEach((_, idx) => {
-                const answer = response.responses[idx]?.answer || "";
+            // add answers by matching question text
+            questions.forEach((q, idx) => {
+                let answer = "";
+                if (Array.isArray(response.responses)) {
+                    // responses as array of {question, answer, type}
+                    const found = response.responses.find(r => (r.question || "") === q.text);
+                    answer = found ? found.answer : "";
+                } else if (typeof response.responses === 'object' && response.responses !== null) {
+                    // responses as object (for older data)
+                    answer = response.responses[`question${idx}`] || "";
+                }
                 row.push(`"${answer.toString().replace(/"/g, '""')}"`);
             });
 
