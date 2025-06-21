@@ -31,13 +31,21 @@
 
   <div class="glass flex-1 mx-8 my-8 p-10 rounded-xl shadow-md text-white flex flex-col overflow-y-auto h-[90vh]">
     <h1 class="text-center text-3xl font-bold mb-2">Custom Form Builder</h1>
-    <div class="mb-6">
-      <div class="text-sm font-semibold mb-2">Instructions:</div>
-      <ul class="list-disc list-inside text-sm mb-4 text-gray-200">
-        <li>Enter the Event Name and Details</li>
-        <li>Add Feedback Form Questions as needed</li>
-        <li>Click deploy to Generate QR code and to Deploy the Form</li>
-      </ul>
+    <div class="mb-6 relative flex justify-end">
+      <button id="infoBtn" type="button" class="focus:outline-none">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-[#3be382]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <circle cx="12" cy="12" r="10" stroke="#3be382" stroke-width="2" fill="none"/>
+          <path stroke="#3be382" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 16v-4m0-4h.01" />
+        </svg>
+      </button>
+      <div id="infoModal" class="hidden absolute right-0 top-10 z-50 w-80 bg-black/90 border border-[#3be382] rounded-xl p-5 text-white text-sm shadow-xl">
+        <div class="font-semibold mb-2 text-[#3be382]">Instructions</div>
+        <ul class="list-disc list-inside text-gray-200">
+          <li>Enter the Event Name and Details</li>
+          <li>Add Feedback Form Questions as needed</li>
+          <li>Click deploy to Generate QR code and to Deploy the Form</li>
+        </ul>
+      </div>
     </div>
     
     <!-- main section -->
@@ -268,6 +276,24 @@
       
       fetchEventData();
     });
+    
+    // Info modal logic
+    const infoBtn = document.getElementById('infoBtn');
+    const infoModal = document.getElementById('infoModal');
+    if (infoBtn && infoModal) {
+      infoBtn.addEventListener('mouseenter', () => {
+        infoModal.classList.remove('hidden');
+      });
+      infoBtn.addEventListener('mouseleave', () => {
+        infoModal.classList.add('hidden');
+      });
+      infoModal.addEventListener('mouseenter', () => {
+        infoModal.classList.remove('hidden');
+      });
+      infoModal.addEventListener('mouseleave', () => {
+        infoModal.classList.add('hidden');
+      });
+    }
   </script>
 </body>
 </html>
