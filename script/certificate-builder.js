@@ -48,7 +48,7 @@ function initKonva(imageSrc) {
             shadowOffset: { x: 1, y: 1 },
             shadowOpacity: 0.5,
         });
-        
+        // recalculate offset after setting text and font size
         nameText.offsetX(nameText.width() / 2);
         nameText.offsetY(nameText.height() / 2);
 
@@ -58,6 +58,9 @@ function initKonva(imageSrc) {
             if (e.evt.deltaY < 0) fontSize = Math.min(100, fontSize + 2);
             else fontSize = Math.max(10, fontSize - 2);
             nameText.fontSize(fontSize);
+            // recalculate offset after font size change
+            nameText.offsetX(nameText.width() / 2);
+            nameText.offsetY(nameText.height() / 2);
             layer.batchDraw();
         });
 
