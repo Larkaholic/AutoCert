@@ -19,7 +19,6 @@ const auth = getAuth(app);
 async function handleLogin(email, password) {
     try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        alert('Login successful!');
         window.location.href = 'form-builder.html';
         return userCredential.user;
     } catch (error) {
