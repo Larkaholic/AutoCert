@@ -23,14 +23,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     tableBody.innerHTML = '';
 
     try {
-        // Query all 'responses' subcollections under any document in 'events'
         const responsesSnapshot = await getDocs(collectionGroup(db, 'responses'));
         if (responsesSnapshot.empty) {
             tableBody.innerHTML = `<tr><td colspan="5" class="text-center py-4">No responses found.</td></tr>`;
             return;
         }
 
-        // Cache for event main documents to avoid redundant fetches
         const eventDocCache = {};
 
         for (const docSnap of responsesSnapshot.docs) {
@@ -40,12 +38,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 ? data.timestamp.toDate().toString()
                 : '';
 
-            // Get the parent event document ID
             const eventDocRef = docSnap.ref.parent.parent;
             let eventName = '';
             if (eventDocRef) {
                 const eventId = eventDocRef.id;
-                // Fetch event main document if not cached
                 if (!eventDocCache[eventId]) {
                     const eventDocSnap = await getDoc(eventDocRef);
                     eventDocCache[eventId] = eventDocSnap.exists() ? (eventDocSnap.data().eventName || eventId) : eventId;
@@ -53,7 +49,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 eventName = eventDocCache[eventId];
             }
 
-            // Get the response document ID
             const responseId = docSnap.id;
 
             const row = document.createElement('tr');

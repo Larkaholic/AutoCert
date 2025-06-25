@@ -8,7 +8,6 @@ const firebaseConfig = {
     measurementId: "G-Q7Z8VF2N2W"
 };
 
-// Initialize Firebase if not already initialized
 if (!firebase.apps.length) {
     firebase.initializeApp(firebaseConfig);
 }
@@ -17,7 +16,16 @@ const db = firebase.firestore();
 const eventSelect = document.getElementById("eventSelect");
 const resultsContainer = document.getElementById("resultsContainer");
 
-// Populate event dropdown
+// likelihood options
+const LIKELIHOOD_OPTIONS = [
+    'Very Likely',
+    'Likely',
+    'Neutral',
+    'Unlikely',
+    'Very Unlikely'
+];
+
+// populate event dropdown
 async function populateEventDropdown() {
     eventSelect.innerHTML = '<option value="">-- Choose an event --</option>';
     try {
@@ -33,7 +41,6 @@ async function populateEventDropdown() {
     }
 }
 
-// Add these functions at the start of the file
 function showAnswersModal(question, answers) {
     const modal = document.getElementById('answersModal');
     const modalAnswers = document.getElementById('modalAnswers');
@@ -57,20 +64,58 @@ function closeAnswersModal() {
     modal.classList.remove('show');
 }
 
-// Fetch and display responses for the selected event
+function getMostVotedOption(counts) {
+    return Object.entries(counts).reduce((a, b) => (a[1] > b[1] ? a : b))[0];
+}
+
+function showLikelihoodModal(question, counts) {
+    const modal = document.getElementById('answersModal');
+    const modalAnswers = document.getElementById('modalAnswers');
+    
+    modalAnswers.innerHTML = `
+        <div class="text-2xl text-white mb-6">All responses ${question}</div>
+        ${LIKELIHOOD_OPTIONS.map(option => `
+            <div class="text-white text-xl mb-4">
+                ${option} (${counts[option] || 0})
+            </div>
+        `).join('')}
+    `;
+    
+    modal.classList.add('show');
+}
+
+function showRatingModal(question, ratings) {
+    const modal = document.getElementById('answersModal');
+    const modalAnswers = document.getElementById('modalAnswers');
+    
+    const counts = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
+    ratings.forEach(rating => counts[rating]++);
+    
+    modalAnswers.innerHTML = `
+        <div class="text-2xl text-white mb-6">All responses ${question}</div>
+        ${Object.entries(counts).map(([rating, count]) => `
+            <div class="text-white text-xl mb-4">
+                ${rating} Star${rating !== '1' ? 's' : ''} (${count})
+            </div>
+        `).join('')}
+    `;
+    
+    modal.classList.add('show');
+}
+
+// fetch and display responses for the selected event
 async function displayEventResponses(eventId) {
     resultsContainer.innerHTML = "<div class='animate-pulse'>Loading responses...</div>";
     if (!eventId) return;
 
     try {
-        // Fetch event data for questions
+        // fuck fetching
         const eventDoc = await db.collection("events").doc(eventId).get();
         if (!eventDoc.exists) {
             resultsContainer.innerHTML = "<div class='text-red-600'>Event not found.</div>";
             return;
         }
 
-        // Fetch all responses for this event
         const responsesSnapshot = await db.collection("events").doc(eventId)
             .collection("responses").get();
 
@@ -79,26 +124,42 @@ async function displayEventResponses(eventId) {
             return;
         }
 
-        // Process responses
         const questions = eventDoc.data().questions || [];
         const responses = responsesSnapshot.docs.map(doc => doc.data());
         
-        // Create result display
         resultsContainer.innerHTML = '';
         
         questions.forEach((question, idx) => {
             const questionDiv = document.createElement('div');
             questionDiv.className = 'mb-8 p-6 bg-black/30 rounded-xl border border-gray-700 cursor-pointer hover:border-[#3be382] transition-colors';
             
-            // Question header
             questionDiv.innerHTML = `
                 <h3 class="text-[#3be382] text-lg font-bold mb-4">Question ${idx + 1}:</h3>
                 <p class="text-white text-lg mb-4">${question.text}</p>
             `;
 
-            // Process answers based on question type
-            if (question.type === 'rating') {
-                // Calculate mean for rating questions
+            if (question.type === 'likelihood') {
+                const counts = LIKELIHOOD_OPTIONS.reduce((acc, opt) => ({...acc, [opt]: 0}), {});
+                
+                responses.forEach(response => {
+                    const answer = response.responses[idx]?.answer;
+                    if (LIKELIHOOD_OPTIONS.includes(answer)) {
+                        counts[answer]++;
+                    }
+                });
+
+                const mostVoted = getMostVotedOption(counts);
+                const totalVotes = Object.values(counts).reduce((a, b) => a + b, 0);
+
+                questionDiv.innerHTML += `
+                    <div class="bg-black/20 p-4 rounded-lg cursor-pointer hover:bg-black/30">
+                        <p class="text-white">Most selected: <span class="text-[#3be382] font-bold">${mostVoted}</span></p>
+                        <p class="text-gray-400 text-sm">Click to view all ${totalVotes} responses</p>
+                    </div>
+                `;
+
+                questionDiv.onclick = () => showLikelihoodModal(eventId, counts);
+            } else if (question.type === 'rating') {
                 const ratings = responses
                     .map(r => parseInt(r.responses[idx]?.answer))
                     .filter(r => !isNaN(r));
@@ -108,13 +169,14 @@ async function displayEventResponses(eventId) {
                     : 'No ratings';
 
                 questionDiv.innerHTML += `
-                    <div class="bg-black/20 p-4 rounded-lg">
+                    <div class="bg-black/20 p-4 rounded-lg cursor-pointer hover:bg-black/30">
                         <p class="text-white">Average Rating: <span class="text-[#3be382] font-bold">${mean}</span></p>
-                        <p class="text-gray-400 text-sm">(from ${ratings.length} responses)</p>
+                        <p class="text-gray-400 text-sm">Click to view all ${ratings.length} responses</p>
                     </div>
                 `;
+
+                questionDiv.onclick = () => showRatingModal(question.text, ratings);
             } else {
-                // For text responses, show only first answer
                 const answers = responses
                     .map(r => r.responses[idx]?.answer)
                     .filter(a => a);
@@ -127,7 +189,6 @@ async function displayEventResponses(eventId) {
                         </div>
                     `;
 
-                    // Add click handler to show all answers
                     questionDiv.onclick = () => showAnswersModal(question.text, answers);
                 } else {
                     questionDiv.innerHTML += `
@@ -147,14 +208,11 @@ async function displayEventResponses(eventId) {
     }
 }
 
-// Event listeners
 eventSelect.addEventListener("change", (e) => {
     displayEventResponses(e.target.value);
 });
 
-// On load
 populateEventDropdown();
 
-// Make functions globally available
 window.showAnswersModal = showAnswersModal;
 window.closeAnswersModal = closeAnswersModal;

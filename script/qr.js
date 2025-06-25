@@ -1,39 +1,36 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // grab the event name from the url
     const params = new URLSearchParams(window.location.search);
-    const event = params.get('event') || '';
+    const eventName = params.get('event') || '';
 
-    let qrUrl;
+    // figure out where to point the qr code
+    let feedbackUrl;
     if (location.hostname === "localhost" || location.hostname.startsWith("192.168.")) {
-        qrUrl = `https://example.com/feedback-form-User.html?event=${encodeURIComponent(event)}`;
+        feedbackUrl = `${window.location.origin}/feedback-form-User.html?event=${encodeURIComponent(eventName)}`;
     } else {
-        qrUrl = `https://${location.host}/feedback-form-User.html?event=${encodeURIComponent(event)}`;
+        feedbackUrl = `${location.protocol}//${location.host}/feedback-form-User.html?event=${encodeURIComponent(eventName)}`;
+        
+        // if we're on github pages, use a different url
+        if (location.host.includes('github.io')) {
+            feedbackUrl = `${location.protocol}//${location.host}/AutoCert/feedback-form-User.html?event=${encodeURIComponent(eventName)}`;
+        }
     }
 
     const qrContainer = document.getElementById('qrcode');
-
     if (qrContainer) {
-        qrContainer.textContent = "";
-        qrContainer.className = "w-full h-full mb-8 rounded-xl border-2 bg-gray-200 border-gray-300 flex items-center justify-center";
-        fetch('https://cleanuri.com/api/v1/shorten', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `url=${encodeURIComponent(qrUrl)}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            let urlForQR = data.result_url || qrUrl;
-            new QRCode(qrContainer, {
-                text: urlForQR,
-                width: 256,
-                height: 256
-            });
-        })
-        .catch(() => {
-            new QRCode(qrContainer, {
-                text: qrUrl,
-                width: 256,
-                height: 256
-            });
+        qrContainer.textContent = '';
+        new QRCode(qrContainer, {
+            text: feedbackUrl,
+            width: 256,
+            height: 256
+        });
+    }
+
+    // Add close button functionality
+    const closeButton = document.querySelector('button');
+    if (closeButton) {
+        closeButton.addEventListener('click', function() {
+            window.close();
         });
     }
 });

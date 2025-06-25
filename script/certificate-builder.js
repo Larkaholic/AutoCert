@@ -1,5 +1,6 @@
 let stage, layer, nameText, bgImageObj;
 let actualImageWidth, actualImageHeight;
+let expirationMinutes = 30; // default 30 minutes
 
 function getResponsiveSize() {
     const container = document.getElementById('konvaContainer');
@@ -47,7 +48,7 @@ function initKonva(imageSrc) {
             shadowOffset: { x: 1, y: 1 },
             shadowOpacity: 0.5,
         });
-        
+        // recalculate offset after setting text and font size
         nameText.offsetX(nameText.width() / 2);
         nameText.offsetY(nameText.height() / 2);
 
@@ -57,6 +58,9 @@ function initKonva(imageSrc) {
             if (e.evt.deltaY < 0) fontSize = Math.min(100, fontSize + 2);
             else fontSize = Math.max(10, fontSize - 2);
             nameText.fontSize(fontSize);
+            // recalculate offset after font size change
+            nameText.offsetX(nameText.width() / 2);
+            nameText.offsetY(nameText.height() / 2);
             layer.batchDraw();
         });
 
@@ -89,6 +93,7 @@ function createCertificatePreview(sampleName = "John Doe") {
         return null;
     }
     
+    // Create a container with the actual image dimensions
     const previewStage = new Konva.Stage({
         container: 'previewContainer',
         width: actualImageWidth,
@@ -98,6 +103,7 @@ function createCertificatePreview(sampleName = "John Doe") {
     const previewLayer = new Konva.Layer();
     previewStage.add(previewLayer);
     
+    // Draw the background image at its actual size
     const previewBg = new Konva.Image({
         image: bgImageObj,
         width: actualImageWidth,
@@ -105,15 +111,17 @@ function createCertificatePreview(sampleName = "John Doe") {
     });
     previewLayer.add(previewBg);
     
+    // Calculate the scale between editor and actual image size
     const { width: containerWidth, height: containerHeight } = getResponsiveSize();
     const scaleX = actualImageWidth / containerWidth;
     const scaleY = actualImageHeight / containerHeight;
     
+    // Position and scale text properly
     const previewText = new Konva.Text({
         text: sampleName,
         x: nameText.x() * scaleX,
         y: nameText.y() * scaleY,
-        fontSize: nameText.fontSize() * scaleY,
+        fontSize: nameText.fontSize() * ((scaleX + scaleY) / 2), // Use average scale for better text sizing
         fontFamily: nameText.fontFamily(),
         fontStyle: nameText.fontStyle(),
         fill: nameText.fill(),
@@ -142,14 +150,22 @@ document.getElementById('previewCertBtn').addEventListener('click', function() {
     const previewModal = document.getElementById('previewModal');
     const previewContainer = document.getElementById('previewContainer');
     
+    // Clear previous preview
     previewContainer.innerHTML = '';
     
+    // Set the container to match actual image size
     previewContainer.style.width = actualImageWidth + 'px';
     previewContainer.style.height = actualImageHeight + 'px';
-    previewContainer.style.maxWidth = '100%';
-    previewContainer.style.maxHeight = '60vh';
     
+    // Add responsive constraints while maintaining aspect ratio
+    previewContainer.style.maxWidth = '100%';
+    previewContainer.style.maxHeight = '70vh';
+    previewContainer.style.objectFit = 'contain';
+    
+    // Generate the preview
     createCertificatePreview();
+    
+    // Show the modal
     previewModal.classList.remove('hidden');
 });
 
@@ -174,6 +190,19 @@ document.getElementById('downloadCertBtn').addEventListener('click', function() 
     downloadLink.click();
     document.body.removeChild(downloadLink);
 });
+
+function updateExpirationDisplay() {
+    const hours = Math.floor(expirationMinutes / 60);
+    const mins = expirationMinutes % 60;
+    const display = hours > 0 ? 
+        `${hours}h ${mins}m` : 
+        `${mins} mins`;
+    document.getElementById('expirationDisplay').textContent = display;
+}
+
+function calculateExpirationTime() {
+    return new Date(Date.now() + (expirationMinutes * 60 * 1000)).toISOString();
+}
 
 document.getElementById('savePlacementBtn').addEventListener('click', async function() {
     if (!nameText || !bgImageObj) {
@@ -213,8 +242,7 @@ document.getElementById('savePlacementBtn').addEventListener('click', async func
     }
     
     try {
-        // Calculate expiration time (2 minutes from now)
-        const expiresAt = new Date(Date.now() + 1550000).toISOString();
+        const expiresAt = calculateExpirationTime();
         
         await firebase.firestore().collection("events").doc(eventName).set({
             namePlacement: placement,
@@ -229,10 +257,14 @@ document.getElementById('savePlacementBtn').addEventListener('click', async func
                     fill: nameText.fill()
                 }
             },
-            expiresAt: expiresAt // Add expiration time
+            expiresAt: expiresAt
         }, { merge: true });
         document.getElementById('saveStatus').textContent = "Placement saved successfully!";
         setTimeout(() => document.getElementById('saveStatus').textContent = "", 3000);
+        
+        const qrUrl = `qr.html?event=${encodeURIComponent(eventName)}`;
+        window.open(qrUrl, '_blank', 'width=400,height=500');
+        
     } catch (e) {
         document.getElementById('saveStatus').textContent = "Failed to save placement: " + e.message;
     }
@@ -296,9 +328,8 @@ document.addEventListener('DOMContentLoaded', function() {
     loadExistingPlacement();
 });
 
-// Initialize event handlers when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize with a blank stage
+    // initialize with a blank stage
     const { width, height } = getResponsiveSize();
     stage = new Konva.Stage({
         container: 'konvaContainer',
@@ -308,7 +339,7 @@ document.addEventListener('DOMContentLoaded', function() {
     layer = new Konva.Layer();
     stage.add(layer);
     
-    // Draw text indicating to upload an image
+    // draw text indicating to upload an image
     const instructionText = new Konva.Text({
         text: 'Upload a certificate template\nto begin',
         x: width / 2,
@@ -323,6 +354,19 @@ document.addEventListener('DOMContentLoaded', function() {
     layer.add(instructionText);
     layer.draw();
     
-    // Load existing
     loadExistingPlacement();
+    
+    document.getElementById('decreaseTime').addEventListener('click', () => {
+        if (expirationMinutes > 30) {
+            expirationMinutes -= 30;
+            updateExpirationDisplay();
+        }
+    });
+
+    document.getElementById('increaseTime').addEventListener('click', () => {
+        expirationMinutes += 30;
+        updateExpirationDisplay();
+    });
+
+    updateExpirationDisplay();
 });

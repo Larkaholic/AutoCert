@@ -6,7 +6,6 @@
   <title>Form Builder</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="./styles/styles.css">
-  <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
@@ -32,16 +31,24 @@
 
   <div class="glass flex-1 mx-8 my-8 p-10 rounded-xl shadow-md text-white flex flex-col overflow-y-auto h-[90vh]">
     <h1 class="text-center text-3xl font-bold mb-2">Custom Form Builder</h1>
-    <div class="mb-6">
-      <div class="text-sm font-semibold mb-2">Instructions:</div>
-      <ul class="list-disc list-inside text-sm mb-4 text-gray-200">
-        <li>Enter the Event Name and Details</li>
-        <li>Add Feedback Form Questions as needed</li>
-        <li>Click deploy to Generate QR code and to Deploy the Form</li>
-      </ul>
+    <div class="mb-6 relative flex justify-end">
+      <button id="infoBtn" type="button" class="focus:outline-none">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-[#3be382]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <circle cx="12" cy="12" r="10" stroke="#3be382" stroke-width="2" fill="none"/>
+          <path stroke="#3be382" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 16v-4m0-4h.01" />
+        </svg>
+      </button>
+      <div id="infoModal" class="hidden absolute right-0 top-10 z-50 w-80 bg-black/90 border border-[#3be382] rounded-xl p-5 text-white text-sm shadow-xl">
+        <div class="font-semibold mb-2 text-[#3be382]">Instructions</div>
+        <ul class="list-disc list-inside text-gray-200">
+          <li>Enter the Event Name and Details</li>
+          <li>Add Feedback Form Questions as needed</li>
+          <li>Click deploy to Generate QR code and to Deploy the Form</li>
+        </ul>
+      </div>
     </div>
     
-    <!-- Event Details Section -->
+    <!-- main section -->
     <div class="mb-6 p-5 bg-black/20 rounded-xl border border-gray-700">
       <h2 class="text-xl font-semibold mb-4 border-b border-gray-600 pb-2">Event Details</h2>
       
@@ -55,7 +62,6 @@
         <textarea id="eventDescription" class="w-full p-3 border border-gray-400 rounded-xl shadow-lg bg-transparent text-white placeholder-gray-400" placeholder="Describe the event..." rows="3"></textarea>
       </div>
     
-    <!-- Questions Section -->
     <h2 class="text-xl font-semibold mb-4 border-b border-gray-600 pb-2">Feedback Questions</h2>
     <form id="questionForm" class="flex flex-col gap-6 overflow-y-auto max-h-[45vh] custom-scrollbar">
       <!-- questions will appear here -->
@@ -74,9 +80,7 @@
     <pre id="output" class="mt-6 bg-gray-100 p-4 rounded text-sm text-gray-800 hidden"></pre>
   </div>
 
-  <!-- Firebase config script -->
   <script>
-    // Firebase configuration
     const firebaseConfig = {
       apiKey: "AIzaSyC92G1LybSWu3463j1Wi0yjZaTzuiHcIMk",
       authDomain: "autocert-8319d.firebaseapp.com",
@@ -91,7 +95,6 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     
-    // Wait for DOM to be fully loaded
     document.addEventListener('DOMContentLoaded', function() {
       const form = document.getElementById('questionForm');
       const addBtn = document.getElementById('addQuestionBtn');
@@ -105,7 +108,6 @@
       
       let questionCount = 0;
       
-      // Add question button
       addBtn.addEventListener('click', function() {
         const title = eventTitleInput.value.trim();
         
@@ -132,9 +134,17 @@
         `;
         
         form.appendChild(questionDiv);
+
+        // Add event listener for auto-filling question input if type is college
+        const select = questionDiv.querySelector('select[name="type"]');
+        const input = questionDiv.querySelector('input[name="question"]');
+        select.addEventListener('change', function() {
+          if (select.value === 'college') {
+            input.value = 'College/Department';
+          }
+        });
       });
       
-      // Remove button handler
       form.addEventListener('click', function(e) {
         if (e.target.classList.contains('remove-btn')) {
           const questionDiv = e.target.closest('div');
@@ -142,7 +152,7 @@
         }
       });
       
-      // Save form handler
+      // save form handler
       saveBtn.addEventListener('click', function() {
         const eventTitle = eventTitleInput.value.trim();
         if (!eventTitle) {
@@ -170,23 +180,20 @@
           return;
         }
 
-        // Collect event details
+        // collect event details
         const eventDetails = {
           description: eventDescriptionInput.value.trim(),
           questions: questions,
           lastUpdated: new Date().toISOString()
         };
 
-        // Save to Firebase
+        // funciton to save to firebase
         db.collection("events").doc(eventTitle).set(eventDetails, { merge: true })
         .then(() => {
-            // Generate the feedback form URL based on current location
             let feedbackUrl;
-            
-            // Always use lowercase filename for GitHub Pages compatibility
             feedbackUrl = `./feedback-form-user.html?event=${encodeURIComponent(eventTitle)}`;
             
-            // Display feedback form URL or QR code 
+            // displaying of feedback form using QR code 
             const output = document.getElementById('output');
             if (output) {
                 output.classList.remove("hidden");
@@ -199,8 +206,6 @@
                     </div>
                 `;
             }
-            
-            // Redirect to certificate builder after saving
             window.location.href = `certificate-builder.html?event=${encodeURIComponent(eventTitle)}`;
         })
         .catch((error) => {
@@ -209,7 +214,7 @@
         });
       });
 
-      // Fetch existing event data when page loads or event title changes
+      // fetch existing event data when page loads or event title changes
       function fetchEventData() {
         const eventTitle = eventTitleInput.value.trim();
         if (!eventTitle || eventTitle.length < 3) return;
@@ -222,13 +227,13 @@
             if (doc.exists) {
               const data = doc.data();
               
-              // Populate event details
+              // populate event details
               eventDescriptionInput.value = data.description || '';
               if (data.date) eventDateInput.value = data.date;
               eventLocationInput.value = data.location || '';
               eventOrganizerInput.value = data.organizer || '';
               
-              // Populate questions
+              // populate questions
               const questions = data.questions || [];
               
               questions.forEach(q => {
@@ -248,6 +253,14 @@
                   <button type="button" class="remove-btn text-red-600 hover:underline">Remove</button>
                 `;
                 form.appendChild(questionDiv);
+                // Add event listener for auto-filling question input if type is college
+                const select = questionDiv.querySelector('select[name="type"]');
+                const input = questionDiv.querySelector('input[name="question"]');
+                select.addEventListener('change', function() {
+                  if (select.value === 'college') {
+                    input.value = 'College/Department';
+                  }
+                });
               });
             }
           })
@@ -257,14 +270,30 @@
           });
       }
       
-      // Call fetchEventData when event title changes
       if (eventTitleInput) {
         eventTitleInput.addEventListener('input', fetchEventData);
       }
       
-      // Initial fetch attempt
       fetchEventData();
     });
+    
+    // Info modal logic
+    const infoBtn = document.getElementById('infoBtn');
+    const infoModal = document.getElementById('infoModal');
+    if (infoBtn && infoModal) {
+      infoBtn.addEventListener('mouseenter', () => {
+        infoModal.classList.remove('hidden');
+      });
+      infoBtn.addEventListener('mouseleave', () => {
+        infoModal.classList.add('hidden');
+      });
+      infoModal.addEventListener('mouseenter', () => {
+        infoModal.classList.remove('hidden');
+      });
+      infoModal.addEventListener('mouseleave', () => {
+        infoModal.classList.add('hidden');
+      });
+    }
   </script>
 </body>
 </html>

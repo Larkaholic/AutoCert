@@ -1,8 +1,5 @@
-// This file is now replaced by inline JavaScript in form-builder.html
-// Keeping this file for reference only
 console.log("This file is no longer used. See form-builder.html for the updated code.");
 
-// Wait for DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', function() {
   const form = document.getElementById('questionForm');
   const addBtn = document.getElementById('addQuestionBtn');
@@ -40,7 +37,6 @@ document.addEventListener('DOMContentLoaded', function() {
     form.appendChild(questionDiv);
   });
   
-  // Remove button handler
   form.addEventListener('click', function(e) {
     if (e.target.classList.contains('remove-btn')) {
       const questionDiv = e.target.closest('div');
@@ -48,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
   
-  // Save form handler
+  // save form handler
   saveBtn.addEventListener('click', function() {
     const eventTitle = eventTitleInput.value.trim();
     if (!eventTitle) {
@@ -76,12 +72,11 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    // Save to Firebase
+    // save to Firebase
     db.collection("events").doc(eventTitle).set({
       questions: questions
     }, { merge: true })
     .then(() => {
-      // Redirect to certificate builder after saving
       window.location.href = `certificate-builder.html?event=${encodeURIComponent(eventTitle)}`;
     })
     .catch((error) => {
@@ -90,7 +85,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // Fetch existing questions when page loads or event title changes
   function fetchQuestions() {
     const eventTitle = eventTitleInput.value.trim();
     if (!eventTitle || eventTitle.length < 3) return;
@@ -129,12 +123,9 @@ document.addEventListener('DOMContentLoaded', function() {
       });
   }
   
-  // Call fetchQuestions when event title changes
   if (eventTitleInput) {
     eventTitleInput.addEventListener('input', fetchQuestions);
   }
-  
-  // Initial fetch attempt
   fetchQuestions();
 });
 
@@ -233,7 +224,6 @@ function saveQuestionToFirestore(question) {
         createdAt: new Date().toISOString()
     };
 
-    // Add options for college/department question type
     if (questionType === 'college') {
         questionData.options = [
             'SHS',
@@ -250,13 +240,11 @@ function saveQuestionToFirestore(question) {
         ];
     }
 
-    // Save to Firestore (merge with existing document)
     db.collection("events").doc(eventTitle).set({
         questions: firebase.firestore.FieldValue.arrayUnion(questionData)
     }, { merge: true })
     .then(() => {
         console.log("Question saved successfully!");
-        // Optionally, refresh the question list or provide feedback to the user
     })
     .catch((error) => {
         console.error("Error saving question: ", error);

@@ -1,11 +1,8 @@
-import { app } from "./firebase.js";
-
 const db = firebase.firestore();
 
 const eventSelect = document.getElementById("eventSelect");
 const dynamicForm = document.getElementById("dynamicFeedbackForm");
 
-// Populate event dropdown
 async function populateEventDropdown() {
     eventSelect.innerHTML = '<option value="">-- Choose an event --</option>';
     try {
@@ -24,7 +21,6 @@ async function populateEventDropdown() {
     }
 }
 
-// Render questions for selected event
 async function renderQuestions(eventId) {
     dynamicForm.innerHTML = "";
     if (!eventId) return;
@@ -61,10 +57,8 @@ async function renderQuestions(eventId) {
     }
 }
 
-// Event listeners
 eventSelect.addEventListener("change", (e) => {
     renderQuestions(e.target.value);
 });
 
-// On load
 populateEventDropdown();

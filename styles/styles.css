@@ -62,3 +62,18 @@ body {
 .feedbackSelectEvent {
   /* height: 100px; */
 }
+
+#konvaContainer {
+  width: 100%;
+  height: 100%;
+  max-width: 1100px;
+  max-height: 540px;
+  min-width: 600px;
+  min-height: 340px;
+  aspect-ratio: 16/9;
+  margin: 0 auto;
+}
+html, body, .main-content-parent {
+  height: 100%;
+  min-height: 100vh;
+}

@@ -19,7 +19,6 @@ const db = getFirestore(app);
 let eventQuestions = [];
 let userInfo = {};
 
-// Load event questions on page load
 document.addEventListener('DOMContentLoaded', async () => {
   const params = new URLSearchParams(window.location.search);
   const eventName = params.get('event');
@@ -39,20 +38,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const { questions = [] } = eventSnap.data();
-    eventQuestions = questions; // Store questions globally
-    renderUserInfoForm(); // Show user info form first
+    eventQuestions = questions;
+    renderUserInfoForm();
   } catch (error) {
     console.error("Error fetching event questions:", error);
   }
 });
 
-// Render the user info form (step 1)
 function renderUserInfoForm() {
   const infoContainer = document.getElementById('user-info-form-container');
   const questionsContainer = document.getElementById('questions-form-container');
   if (!infoContainer) return;
 
-  // Show info form, hide questions form
   infoContainer.classList.remove('hidden');
   if (questionsContainer) questionsContainer.classList.add('hidden');
 
@@ -88,7 +85,6 @@ function renderUserInfoForm() {
   document.getElementById('nextButton').onclick = handleUserInfoNext;
 }
 
-// Handle "Next" button click on user info form
 function handleUserInfoNext() {
   const nameInput = document.getElementById('userName');
   const emailInput = document.getElementById('userEmail');
@@ -103,13 +99,11 @@ function handleUserInfoNext() {
   renderQuestionsForm(eventQuestions);
 }
 
-// Render feedback questions form (step 2)
 function renderQuestionsForm(questions) {
   const infoContainer = document.getElementById('user-info-form-container');
   const questionsContainer = document.getElementById('questions-form-container');
   if (!questionsContainer) return;
 
-  // Hide info form, show questions form
   if (infoContainer) infoContainer.classList.add('hidden');
   questionsContainer.classList.remove('hidden');
 
@@ -167,7 +161,6 @@ function renderQuestionsForm(questions) {
     </div>
   `;
 
-  // Add star rating event listeners
   questions.forEach((question, index) => {
     let qType = typeof question === "object" && question !== null ? question.type || "text" : "text";
     if (qType === "rating") {
@@ -175,9 +168,7 @@ function renderQuestionsForm(questions) {
       const hiddenInput = form.querySelector(`#question${index}`);
       stars.forEach((star, i) => {
         star.addEventListener('click', () => {
-          // Set value
           hiddenInput.value = i + 1;
-          // Highlight stars
           stars.forEach((s, j) => {
             s.classList.toggle('text-yellow-400', j <= i);
             s.classList.toggle('text-gray-400', j > i);
@@ -190,7 +181,6 @@ function renderQuestionsForm(questions) {
   form.onsubmit = handleFormSubmit;
 }
 
-// Handle form submission
 async function handleFormSubmit(event) {
   event.preventDefault();
   const form = event.target;
@@ -216,7 +206,6 @@ async function handleFormSubmit(event) {
     submitButton.disabled = true;
     const docRef = await addDoc(collection(db, "certificates"), userData);
 
-    // Fetch the certificate image URL from Firestore (assume stored in event doc as 'certificateUrl')
     let certificateUrl = '';
     try {
       const eventRef = doc(db, "events", eventName);
@@ -228,10 +217,8 @@ async function handleFormSubmit(event) {
       certificateUrl = '';
     }
 
-    // Show modal with download button
     showCertificateModal(certificateUrl || 'certificate-default.png');
 
-    // Optionally, reset form or hide it
     form.reset();
     form.classList.add('hidden');
   } catch (error) {
@@ -244,7 +231,6 @@ async function handleFormSubmit(event) {
   }
 }
 
-// Add this function to show the modal
 function showCertificateModal(certificateUrl) {
   let modal = document.getElementById('certificateReadyModal');
   if (!modal) {
@@ -271,7 +257,7 @@ function showCertificateModal(certificateUrl) {
         return;
       }
       const userName = userInfo.name || "Participant";
-      // Fetch placement from Firestore
+      // fuck fetching from firestore
       const params = new URLSearchParams(window.location.search);
       const eventName = params.get('event');
       let placement = { x: 0.5, y: 0.51, fontSize: 0.055, fontFamily: 'Montserrat, Arial, sans-serif', fill: '#1a2a3a' };
