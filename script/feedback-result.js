@@ -44,9 +44,11 @@ async function populateEventDropdown() {
 function showAnswersModal(question, answers) {
     const modal = document.getElementById('answersModal');
     const modalAnswers = document.getElementById('modalAnswers');
-    
+    modalAnswers.style.position = 'relative'; // Ensure relative positioning for absolute button
+    modalAnswers.style.paddingTop = '2.5rem'; // Add top padding for button
     modalAnswers.innerHTML = `
-        <h4 class="text-[#3be382] font-bold mb-4">${question}</h4>
+        <button onclick="closeAnswersModal()" class="absolute top-2 right-4 text-white text-2xl font-bold hover:text-[#3be382] z-10">&times;</button>
+        <h4 class="text-[#3be382] font-bold mb-4 mt-6">${question}</h4>
         <ul class="list-disc ml-6 space-y-3">
             ${answers.map(answer => `
                 <li class="text-white">
@@ -71,9 +73,11 @@ function getMostVotedOption(counts) {
 function showLikelihoodModal(question, counts) {
     const modal = document.getElementById('answersModal');
     const modalAnswers = document.getElementById('modalAnswers');
-    
+    modalAnswers.style.position = 'relative';
+    modalAnswers.style.paddingTop = '2.5rem';
     modalAnswers.innerHTML = `
-        <div class="text-2xl text-white mb-6">All responses ${question}</div>
+        <button onclick="closeAnswersModal()" class="absolute top-2 right-4 text-white text-2xl font-bold hover:text-[#3be382] z-10">&times;</button>
+        <div class="text-2xl text-white mb-6 mt-6">All responses ${question}</div>
         ${LIKELIHOOD_OPTIONS.map(option => `
             <div class="text-white text-xl mb-4">
                 ${option} (${counts[option] || 0})
@@ -87,12 +91,13 @@ function showLikelihoodModal(question, counts) {
 function showRatingModal(question, ratings) {
     const modal = document.getElementById('answersModal');
     const modalAnswers = document.getElementById('modalAnswers');
-    
+    modalAnswers.style.position = 'relative';
+    modalAnswers.style.paddingTop = '2.5rem';
     const counts = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
     ratings.forEach(rating => counts[rating]++);
-    
     modalAnswers.innerHTML = `
-        <div class="text-2xl text-white mb-6">All responses ${question}</div>
+        <button onclick="closeAnswersModal()" class="absolute top-2 right-4 text-white text-2xl font-bold hover:text-[#3be382] z-10">&times;</button>
+        <div class="text-2xl text-white mb-6 mt-6">All responses ${question}</div>
         ${Object.entries(counts).map(([rating, count]) => `
             <div class="text-white text-xl mb-4">
                 ${rating} Star${rating !== '1' ? 's' : ''} (${count})
@@ -100,6 +105,34 @@ function showRatingModal(question, ratings) {
         `).join('')}
     `;
     
+    modal.classList.add('show');
+}
+
+function showCollegeModal(question, answers) {
+    const modal = document.getElementById('answersModal');
+    const modalAnswers = document.getElementById('modalAnswers');
+    modalAnswers.style.position = 'relative';
+    modalAnswers.style.paddingTop = '2.5rem';
+    // Count occurrences of each answer
+    const counts = {};
+    answers.forEach(ans => {
+        counts[ans] = (counts[ans] || 0) + 1;
+    });
+    // Sort by count descending, then alphabetically
+    const sorted = Object.entries(counts)
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+
+    modalAnswers.innerHTML = `
+        <button onclick="closeAnswersModal()" class="absolute top-2 right-4 text-white text-2xl font-bold hover:text-[#3be382] z-10">&times;</button>
+        <h4 class="text-[#3be382] font-bold mb-4 mt-6">${question}</h4>
+        <ul class="list-disc ml-6 space-y-3">
+            ${sorted.map(([answer, count]) => `
+                <li class="text-white">
+                    <div class="bg-black/20 p-4 rounded-lg">${answer} <span class="text-[#3be382] font-bold ml-2">(${count})</span></div>
+                </li>
+            `).join('')}
+        </ul>
+    `;
     modal.classList.add('show');
 }
 
@@ -176,6 +209,26 @@ async function displayEventResponses(eventId) {
                 `;
 
                 questionDiv.onclick = () => showRatingModal(question.text, ratings);
+            } else if (question.type === 'college') {
+                const answers = responses
+                    .map(r => r.responses[idx]?.answer)
+                    .filter(a => a);
+
+                if (answers.length > 0) {
+                    questionDiv.innerHTML += `
+                        <div class="space-y-2">
+                            <div class="bg-black/20 p-4 rounded-lg mb-2 text-white">${answers[0]}</div>
+                            <p class="text-[#3be382] text-sm">Click to view all ${answers.length} responses (sorted)</p>
+                        </div>
+                    `;
+                    questionDiv.onclick = () => showCollegeModal(question.text, answers);
+                } else {
+                    questionDiv.innerHTML += `
+                        <div class="space-y-2">
+                            <p class="text-gray-400">No responses yet</p>
+                        </div>
+                    `;
+                }
             } else {
                 const answers = responses
                     .map(r => r.responses[idx]?.answer)
@@ -216,3 +269,4 @@ populateEventDropdown();
 
 window.showAnswersModal = showAnswersModal;
 window.closeAnswersModal = closeAnswersModal;
+window.showCollegeModal = showCollegeModal;
