@@ -93,6 +93,7 @@ function createCertificatePreview(sampleName = "John Doe") {
         return null;
     }
     
+    // Create a container with the actual image dimensions
     const previewStage = new Konva.Stage({
         container: 'previewContainer',
         width: actualImageWidth,
@@ -102,6 +103,7 @@ function createCertificatePreview(sampleName = "John Doe") {
     const previewLayer = new Konva.Layer();
     previewStage.add(previewLayer);
     
+    // Draw the background image at its actual size
     const previewBg = new Konva.Image({
         image: bgImageObj,
         width: actualImageWidth,
@@ -109,15 +111,17 @@ function createCertificatePreview(sampleName = "John Doe") {
     });
     previewLayer.add(previewBg);
     
+    // Calculate the scale between editor and actual image size
     const { width: containerWidth, height: containerHeight } = getResponsiveSize();
     const scaleX = actualImageWidth / containerWidth;
     const scaleY = actualImageHeight / containerHeight;
     
+    // Position and scale text properly
     const previewText = new Konva.Text({
         text: sampleName,
         x: nameText.x() * scaleX,
         y: nameText.y() * scaleY,
-        fontSize: nameText.fontSize() * scaleY,
+        fontSize: nameText.fontSize() * ((scaleX + scaleY) / 2), // Use average scale for better text sizing
         fontFamily: nameText.fontFamily(),
         fontStyle: nameText.fontStyle(),
         fill: nameText.fill(),
@@ -146,14 +150,22 @@ document.getElementById('previewCertBtn').addEventListener('click', function() {
     const previewModal = document.getElementById('previewModal');
     const previewContainer = document.getElementById('previewContainer');
     
+    // Clear previous preview
     previewContainer.innerHTML = '';
     
+    // Set the container to match actual image size
     previewContainer.style.width = actualImageWidth + 'px';
     previewContainer.style.height = actualImageHeight + 'px';
-    previewContainer.style.maxWidth = '100%';
-    previewContainer.style.maxHeight = '60vh';
     
+    // Add responsive constraints while maintaining aspect ratio
+    previewContainer.style.maxWidth = '100%';
+    previewContainer.style.maxHeight = '70vh';
+    previewContainer.style.objectFit = 'contain';
+    
+    // Generate the preview
     createCertificatePreview();
+    
+    // Show the modal
     previewModal.classList.remove('hidden');
 });
 
