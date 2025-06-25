@@ -92,36 +92,54 @@ function createCertificatePreview(sampleName = "John Doe") {
         alert("Please upload a template and position the name first.");
         return null;
     }
-    
-    // Create a container with the actual image dimensions
+
+    const previewContainer = document.getElementById('previewContainer');
+    // Use the actual rendered size of the preview container
+    const containerWidth = previewContainer.offsetWidth;
+    const containerHeight = previewContainer.offsetHeight;
+
+    // Calculate scale to fit image into container while maintaining aspect ratio
+    const scale = Math.min(
+        containerWidth / actualImageWidth,
+        containerHeight / actualImageHeight
+    );
+    const displayWidth = actualImageWidth * scale;
+    const displayHeight = actualImageHeight * scale;
+
+    // Center the image in the container
+    previewContainer.style.display = 'flex';
+    previewContainer.style.alignItems = 'center';
+    previewContainer.style.justifyContent = 'center';
+
+    // Create a container with the scaled image dimensions
     const previewStage = new Konva.Stage({
         container: 'previewContainer',
-        width: actualImageWidth,
-        height: actualImageHeight,
+        width: displayWidth,
+        height: displayHeight,
     });
-    
+
     const previewLayer = new Konva.Layer();
     previewStage.add(previewLayer);
-    
-    // Draw the background image at its actual size
+
+    // Draw the background image at the scaled size
     const previewBg = new Konva.Image({
         image: bgImageObj,
-        width: actualImageWidth,
-        height: actualImageHeight
+        width: displayWidth,
+        height: displayHeight
     });
     previewLayer.add(previewBg);
-    
-    // Calculate the scale between editor and actual image size
-    const { width: containerWidth, height: containerHeight } = getResponsiveSize();
-    const scaleX = actualImageWidth / containerWidth;
-    const scaleY = actualImageHeight / containerHeight;
-    
+
+    // Calculate the scale between editor and preview image size
+    const { width: editorWidth, height: editorHeight } = getResponsiveSize();
+    const scaleX = displayWidth / editorWidth;
+    const scaleY = displayHeight / editorHeight;
+
     // Position and scale text properly
     const previewText = new Konva.Text({
         text: sampleName,
         x: nameText.x() * scaleX,
         y: nameText.y() * scaleY,
-        fontSize: nameText.fontSize() * ((scaleX + scaleY) / 2), // Use average scale for better text sizing
+        fontSize: nameText.fontSize() * ((scaleX + scaleY) / 2),
         fontFamily: nameText.fontFamily(),
         fontStyle: nameText.fontStyle(),
         fill: nameText.fill(),
@@ -130,13 +148,13 @@ function createCertificatePreview(sampleName = "John Doe") {
         shadowOffset: nameText.shadowOffset(),
         shadowOpacity: nameText.shadowOpacity(),
     });
-    
+
     previewText.offsetX(previewText.width() / 2);
     previewText.offsetY(previewText.height() / 2);
-    
+
     previewLayer.add(previewText);
     previewLayer.draw();
-    
+
     return previewStage;
 }
 
@@ -146,25 +164,26 @@ document.getElementById('previewCertBtn').addEventListener('click', function() {
         setTimeout(() => document.getElementById('saveStatus').textContent = "", 3000);
         return;
     }
-    
+
     const previewModal = document.getElementById('previewModal');
     const previewContainer = document.getElementById('previewContainer');
-    
+
     // Clear previous preview
     previewContainer.innerHTML = '';
-    
-    // Set the container to match actual image size
-    previewContainer.style.width = actualImageWidth + 'px';
-    previewContainer.style.height = actualImageHeight + 'px';
-    
-    // Add responsive constraints while maintaining aspect ratio
-    previewContainer.style.maxWidth = '100%';
-    previewContainer.style.maxHeight = '70vh';
-    previewContainer.style.objectFit = 'contain';
-    
-    // Generate the preview
+
+    // Make the container wide and not too tall for a landscape certificate
+    previewContainer.style.width = '90vw';      // Use 90% of viewport width
+    previewContainer.style.height = '60vh';     // Use 60% of viewport height
+    previewContainer.style.maxWidth = '';
+    previewContainer.style.maxHeight = '';
+    previewContainer.style.objectFit = '';
+    previewContainer.style.display = 'flex';
+    previewContainer.style.alignItems = 'center';
+    previewContainer.style.justifyContent = 'center';
+
+    // Generate the preview (will fit to container)
     createCertificatePreview();
-    
+
     // Show the modal
     previewModal.classList.remove('hidden');
 });
