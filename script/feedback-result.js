@@ -47,7 +47,7 @@ function showAnswersModal(question, answers) {
     
     modalAnswers.innerHTML = `
         <h4 class="text-[#3be382] font-bold mb-4">${question}</h4>
-        <ul class="list-disc ml-6 space-y-3">
+        <ul class="list-disc ml-6 space-y-3 max-h-screen overflow-y-auto my-10">
             ${answers.map(answer => `
                 <li class="text-white">
                     <div class="bg-black/20 p-4 rounded-lg">${answer}</div>
