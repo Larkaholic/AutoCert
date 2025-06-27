@@ -47,9 +47,8 @@ function showAnswersModal(question, answers) {
     modalAnswers.style.position = 'relative'; // Ensure relative positioning for absolute button
     modalAnswers.style.paddingTop = '2.5rem'; // Add top padding for button
     modalAnswers.innerHTML = `
-        <button onclick="closeAnswersModal()" class="absolute top-2 right-4 text-white text-2xl font-bold hover:text-[#3be382] z-10">&times;</button>
-        <h4 class="text-[#3be382] font-bold mb-4 mt-6">${question}</h4>
-        <ul class="list-disc ml-6 space-y-3">
+        <h4 class="text-[#3be382] font-bold mb-4">${question}</h4>
+        <ul class="list-disc ml-6 space-y-3 max-h-screen overflow-y-auto my-10">
             ${answers.map(answer => `
                 <li class="text-white">
                     <div class="bg-black/20 p-4 rounded-lg">${answer}</div>
