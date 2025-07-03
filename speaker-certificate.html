@@ -57,12 +57,20 @@
       <div class="flex flex-col gap-4 md:gap-8 overflow-auto">
         <div class="flex flex-col md:flex-row justify-between items-start">
           <!-- Left side: Upload controls -->
-          <div class="w-full md:w-auto mb-4 md:mb-0">
-            <label class="block font-bold text-lg mb-4 text-white">Upload Certificate Template</label>
-            <div class="flex flex-row gap-2 md:gap-6 items-center">
+          <div class="flex flex-col md:flex-row w-full md:w-auto mb-4 md:mb-0 gap-8">
+            <!-- Certificate Upload -->
+            <div class="flex flex-col items-center gap-4">
+              <label class="block font-bold text-lg text-white whitespace-nowrap">Upload Certificate</label>
               <button id="uploadBtn" class="border border-[#3be382] rounded-full px-6 md:px-10 py-2 text-white font-semibold bg-transparent hover:bg-[#1a1a1a] transition">Upload</button>
               <input type="file" id="templateUpload" accept="image/png, image/jpeg" class="hidden"/>
-              <span id="fileName" class="border border-[#3be382] rounded-xl px-4 md:px-8 py-2 bg-transparent text-white text-lg font-bold w-40 md:w-64 text-left overflow-hidden whitespace-nowrap text-ellipsis">No File Chosen</span>
+              <span id="fileName" class="text-white text-sm ml-2"></span>
+            </div>
+            <!-- Signature Upload -->
+            <div class="flex flex-col items-center gap-4">
+              <label class="block font-bold text-lg text-white whitespace-nowrap">Upload Signature</label>
+              <button id="signatureUploadBtn" class="border border-[#3be382] rounded-full px-6 md:px-10 py-2 text-white font-semibold bg-transparent hover:bg-[#1a1a1a] transition">Upload</button>
+              <input type="file" id="signatureUpload" accept="image/png, image/jpeg" class="hidden"/>
+              <span id="signatureFileName" class="text-white text-sm ml-2"></span>
             </div>
           </div>
 
@@ -148,6 +156,18 @@
       uploadBtn.onclick = () => templateUpload.click();
       templateUpload.onchange = () => {
         fileName.textContent = templateUpload.files.length ? templateUpload.files[0].name : 'No File Chosen';
+      };
+    }
+
+    // Add signature upload handlers
+    const signatureUploadBtn = document.getElementById('signatureUploadBtn');
+    const signatureUpload = document.getElementById('signatureUpload');
+    const signatureFileName = document.getElementById('signatureFileName');
+
+    if (signatureUploadBtn && signatureUpload && signatureFileName) {
+      signatureUploadBtn.onclick = () => signatureUpload.click();
+      signatureUpload.onchange = () => {
+        signatureFileName.textContent = signatureUpload.files.length ? signatureUpload.files[0].name : 'No File Chosen';
       };
     }
 
@@ -333,6 +353,29 @@
           draggable: true
         });
         layer.add(nameText);
+
+        // Add signature image if available
+        const signatureUpload = document.getElementById('signatureUpload');
+        if (signatureUpload.files && signatureUpload.files[0]) {
+          const reader = new FileReader();
+          reader.onload = function(evt) {
+            const img = new Image();
+            img.onload = function() {
+              const konvaSignature = new Konva.Image({
+                x: 50,
+                y: 100, // Adjust Y position as needed
+                width: 150, // Set desired width
+                height: 50, // Set desired height
+                draggable: true
+              });
+              konvaSignature.image(img);
+              layer.add(konvaSignature);
+              layer.batchDraw();
+            };
+            img.src = evt.target.result;
+          };
+          reader.readAsDataURL(signatureUpload.files[0]);
+        }
 
         // Update the stage to show the new elements
         layer.draw();
