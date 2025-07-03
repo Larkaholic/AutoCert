@@ -631,27 +631,9 @@ document.addEventListener('DOMContentLoaded', function() {
     loadExistingPlacement();
     
     // Add event listeners with proper checks
-    const decreaseTimeBtn = document.getElementById('decreaseTime');
-    const increaseTimeBtn = document.getElementById('increaseTime');
     const signatureUploadBtn = document.getElementById('signatureUploadBtn');
     const signatureUpload = document.getElementById('signatureUpload');
     const signatureFileName = document.getElementById('signatureFileName');
-    
-    if (decreaseTimeBtn) {
-        decreaseTimeBtn.addEventListener('click', () => {
-            if (expirationMinutes > 30) {
-                expirationMinutes -= 30;
-                updateExpirationDisplay();
-            }
-        });
-    }
-
-    if (increaseTimeBtn) {
-        increaseTimeBtn.addEventListener('click', () => {
-            expirationMinutes += 30;
-            updateExpirationDisplay();
-        });
-    }
 
     // Signature upload functionality
     if (signatureUploadBtn && signatureUpload && signatureFileName) {
