@@ -8,8 +8,7 @@
   <link rel="stylesheet" href="./styles/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/konva@9.2.0/konva.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
   <script src="./script/speaker-certificate.js"></script>
 </head>
 <body class="flex flex-col md:flex-row min-h-screen bg-gradient-to-tr from-[#000000] from-35% to-[#00691c]">
@@ -94,7 +93,7 @@
   </div>
   
   <!-- QR Code Modal -->
-  <div id="qrModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
+  <div id="qrModal" class="fixed inset-0 bg-black bg-opacity-60 items-center justify-center z-50 hidden">
     <div class="bg-white rounded-xl p-8 flex flex-col items-center">
       <div id="qrCodeContainer" class="mb-4"></div>
       <button id="closeQrBtn" class="mt-4 px-6 py-2 rounded bg-[#232b2b] text-white border border-[#3be382] hover:bg-[#1a1a1a]">Close</button>
@@ -102,7 +101,7 @@
   </div>
 
   <!-- Certificate Preview Modal -->
-  <div id="previewModal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 hidden">
+  <div id="previewModal" class="fixed inset-0 bg-black bg-opacity-60 items-center justify-center z-50 hidden">
     <div class="bg-white rounded-xl p-8 flex flex-col items-center max-w-4xl">
       <h3 class="text-xl font-bold mb-4">Certificate Preview</h3>
       <div id="previewContainer" class="border border-gray-300 mb-4 overflow-hidden">
@@ -123,7 +122,7 @@
     const uploadBtn = document.getElementById('uploadBtn');
     const templateUpload = document.getElementById('templateUpload');
     const fileName = document.getElementById('fileName');
-    const deployBtn = document.getElementById('savePlacementBtn');
+    const nextBtn = document.getElementById('savePlacementBtn');
     const qrModal = document.getElementById('qrModal');
     const qrCodeContainer = document.getElementById('qrCodeContainer');
     const closeQrBtn = document.getElementById('closeQrBtn');
@@ -153,132 +152,7 @@
       };
     }
 
-    // Cloudinary config (replace with your own)
-    const CLOUDINARY_URL = 'https://api.cloudinary.com/v1_1/ds0pv2kvy/image/upload';
-    const CLOUDINARY_UPLOAD_PRESET = 'autocert_unsigned';
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyC92G1LybSWu3463j1Wi0yjZaTzuiHcIMk",
-      authDomain: "autocert-8319d.firebaseapp.com",
-      projectId: "autocert-8319d",
-      storageBucket: "autocert-8319d.firebasestorage.app",
-      messagingSenderId: "941021055631",
-      appId: "1:941021055631:web:ffbfae2bce3856f742fefa",
-      measurementId: "G-Q7Z8VF2N2W"
-    };
-    // Ensure firebase is available globally
-    if (typeof firebase === "undefined") {
-      alert("Firebase SDK not loaded. Please check your <script> includes in <head>.");
-      throw new Error("Firebase SDK not loaded.");
-    }
-    if (!firebase.apps.length) {
-      firebase.initializeApp(firebaseConfig);
-    }
-    const db = firebase.firestore();
-
-    // Get event name from URL
-    const params = new URLSearchParams(window.location.search);
-    const eventName = params.get('event') || '';
-
-    if (deployBtn) {
-      deployBtn.addEventListener('click', async function(e) {
-        e.preventDefault();
-
-        // Validate file input
-        if (!templateUpload.files || !templateUpload.files[0]) {
-          alert('Please select a certificate image to upload.');
-          return;
-        }
-
-        // Upload to Cloudinary
-        const formData = new FormData();
-        formData.append('file', templateUpload.files[0]);
-        formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-
-        let cloudinaryUrl = '';
-        try {
-          const uploadRes = await fetch(CLOUDINARY_URL, {
-            method: 'POST',
-            body: formData
-          });
-          const uploadData = await uploadRes.json();
-          console.log('Cloudinary upload response:', uploadData);
-          if (uploadData.error) {
-            alert('Cloudinary error: ' + uploadData.error.message);
-            return;
-          }
-          if (!uploadData.secure_url) throw new Error('Upload failed');
-          cloudinaryUrl = uploadData.secure_url;
-        } catch (err) {
-          alert('Failed to upload certificate image. ' + err.message);
-          return;
-        }
-
-        // Test the Cloudinary URL before saving
-        try {
-          const testRes = await fetch(cloudinaryUrl, { method: 'HEAD' });
-          if (!testRes.ok) {
-            alert('Uploaded image is not accessible. Please check your Cloudinary preset and account.');
-            return;
-          }
-        } catch (err) {
-          alert('Uploaded image is not accessible. Please check your Cloudinary preset and account.');
-          return;
-        }
-
-        // Save Cloudinary URL to Firestore event
-        try {
-          await db.collection("events").doc(eventName).set({
-            certificateUrl: cloudinaryUrl
-          }, { merge: true });
-          
-          // Add this: Test certificate generation with the uploaded template
-          const eventData = await db.collection("events").doc(eventName).get();
-          const namePlacement = eventData.data().namePlacement;
-          
-          if (namePlacement) {
-            try {
-              // Test certificate generation
-              const testCertURL = await CertificateGenerator.generate({
-                certificateUrl: cloudinaryUrl,
-                namePlacement: namePlacement,
-                participantName: "Test Participant"
-              });
-              
-              console.log("Certificate generation test successful");
-            } catch (genError) {
-              console.error("Certificate generation test failed:", genError);
-              // Continue anyway since this is just a test
-            }
-          }
-          
-        } catch (err) {
-          alert('Failed to save certificate URL to event.');
-          return;
-        }
-
-        // Show QR modal
-        // qrModal.classList.remove('hidden');
-        // qrCodeContainer.innerHTML = '';
-        // let feedbackUrl;
-        // if (location.hostname === "localhost" || location.hostname.startsWith("192.168.")) {
-        //   feedbackUrl = `${window.location.origin}/feedback-form-User.html?event=${encodeURIComponent(eventName)}`;
-        // } else {
-        //   // Use lowercase version for GitHub Pages compatibility
-        //   feedbackUrl = `${location.protocol}//${location.host}/feedback-form-User.html?event=${encodeURIComponent(eventName)}`;
-          
-        //   // Special handling for GitHub Pages if needed
-        //   if (location.host.includes('github.io')) {
-        //     feedbackUrl = `${location.protocol}//${location.host}/AutoCert/feedback-form-User.html?event=${encodeURIComponent(eventName)}`;
-        //   }
-        // }
-        // new QRCode(qrCodeContainer, {
-        //   text: feedbackUrl,
-        //   width: 256,
-        //   height: 256
-        // });
-      });
-    }
+    // Removed Firebase and event-related code for standalone functionality
 
     if (closeQrBtn) {
       closeQrBtn.addEventListener('click', function() {
