@@ -304,19 +304,24 @@ function createCertificatePreview(sampleName = "John Doe") {
     const { width: editorWidth, height: editorHeight } = getResponsiveSize();
     const scaleX = displayWidth / editorWidth;
     const scaleY = displayHeight / editorHeight;
+    
+    console.log("Preview scaling factors:", { scaleX, scaleY, editorWidth, editorHeight, displayWidth, displayHeight });
 
-    // Position and scale text properly
+    // Position and scale text properly with accurate placement
     const previewText = new Konva.Text({
         text: sampleName,
         x: nameText.x() * scaleX,
         y: nameText.y() * scaleY,
-        fontSize: nameText.fontSize() * ((scaleX + scaleY) / 2),
+        fontSize: nameText.fontSize() * scaleY,
         fontFamily: nameText.fontFamily(),
         fontStyle: nameText.fontStyle(),
         fill: nameText.fill(),
         shadowColor: nameText.shadowColor(),
-        shadowBlur: nameText.shadowBlur(),
-        shadowOffset: nameText.shadowOffset(),
+        shadowBlur: nameText.shadowBlur() * scaleY,
+        shadowOffset: {
+            x: nameText.shadowOffset().x * scaleX,
+            y: nameText.shadowOffset().y * scaleY
+        },
         shadowOpacity: nameText.shadowOpacity(),
     });
 
@@ -324,7 +329,7 @@ function createCertificatePreview(sampleName = "John Doe") {
     previewText.offsetY(previewText.height() / 2);
     previewLayer.add(previewText);
 
-    // Add signature image if available
+    // Add signature image if available with proper scaling
     if (signImageObj && signImage.children.length > 0) {
         const signChild = signImage.children[0];
         if (signChild instanceof Konva.Image) {
@@ -332,10 +337,10 @@ function createCertificatePreview(sampleName = "John Doe") {
                 image: signImageObj,
                 x: signImage.x() * scaleX,
                 y: signImage.y() * scaleY,
-                width: signChild.width() * ((scaleX + scaleY) / 2),
-                height: signChild.height() * ((scaleX + scaleY) / 2),
-                offsetX: signChild.offsetX() * ((scaleX + scaleY) / 2),
-                offsetY: signChild.offsetY() * ((scaleX + scaleY) / 2),
+                width: signChild.width() * scaleX,
+                height: signChild.height() * scaleY,
+                offsetX: signChild.offsetX() * scaleX,
+                offsetY: signChild.offsetY() * scaleY,
             });
             previewLayer.add(previewSignImage);
         }
@@ -440,7 +445,7 @@ function updateNamesDisplay() {
     }
 }
 
-function createCertificateWithName(speakerName) {
+async function createCertificateWithName(speakerName) {
     if (!nameText || !bgImageObj) {
         console.error("Missing required elements for certificate generation");
         return null;
@@ -448,55 +453,147 @@ function createCertificateWithName(speakerName) {
 
     const { width: containerWidth, height: containerHeight } = getResponsiveSize();
     
-    // Create a new canvas for the certificate
-    const canvas = document.createElement('canvas');
-    canvas.width = actualImageWidth;
-    canvas.height = actualImageHeight;
-    const ctx = canvas.getContext('2d');
-    
-    // Draw the background image
-    ctx.drawImage(bgImageObj, 0, 0, actualImageWidth, actualImageHeight);
-    
-    // Calculate proper scaling for text placement
-    const scaleX = actualImageWidth / containerWidth;
-    const scaleY = actualImageHeight / containerHeight;
-    
-    // Draw the speaker name
-    ctx.save();
-    ctx.font = `${nameText.fontStyle()} ${nameText.fontSize() * scaleY}px ${nameText.fontFamily()}`;
-    ctx.fillStyle = nameText.fill();
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    
-    // Add shadow if present
-    if (nameText.shadowColor()) {
-        ctx.shadowColor = nameText.shadowColor();
-        ctx.shadowBlur = nameText.shadowBlur();
-        ctx.shadowOffsetX = nameText.shadowOffset().x;
-        ctx.shadowOffsetY = nameText.shadowOffset().y;
-    }
-    
-    ctx.fillText(speakerName, nameText.x() * scaleX, nameText.y() * scaleY);
-    ctx.restore();
-    
-    // Draw signature if available
+    // Create placement data structure similar to certificate-generator.js
+    const namePlacement = {
+        xPercent: nameText.x() / containerWidth,
+        yPercent: nameText.y() / containerHeight,
+        x: nameText.x(),
+        y: nameText.y(),
+        fontSize: nameText.fontSize(),
+        fontSizePercent: nameText.fontSize() / containerHeight,
+        fontFamily: nameText.fontFamily(),
+        fontStyle: nameText.fontStyle(),
+        fill: nameText.fill(),
+        shadowColor: nameText.shadowColor(),
+        shadowBlur: nameText.shadowBlur(),
+        shadowOffset: nameText.shadowOffset(),
+        shadowOpacity: nameText.shadowOpacity(),
+        width: nameText.width(),
+        height: nameText.height(),
+        offsetX: 1,
+        offsetY: 1,
+        editorWidth: containerWidth,
+        editorHeight: containerHeight,
+        imageWidth: actualImageWidth,
+        imageHeight: actualImageHeight,
+        scaleX: actualImageWidth / containerWidth,
+        scaleY: actualImageHeight / containerHeight,
+        certificateGeneration: {
+            namePosition: {
+                x: nameText.x() * (actualImageWidth / containerWidth),
+                y: nameText.y() * (actualImageHeight / containerHeight),
+                centered: true,
+                fontSize: nameText.fontSize() * (actualImageHeight / containerHeight),
+                fontFamily: nameText.fontFamily(),
+                fontStyle: nameText.fontStyle(),
+                fill: nameText.fill()
+            }
+        }
+    };
+
+    // Add signature placement if available
     if (signImageObj && signImage.children.length > 0) {
         const signChild = signImage.children[0];
         if (signChild instanceof Konva.Image) {
-            ctx.drawImage(
-                signImageObj,
-                signImage.x() * scaleX - (signChild.offsetX() * scaleX),
-                signImage.y() * scaleY - (signChild.offsetY() * scaleY),
-                signChild.width() * scaleX,
-                signChild.height() * scaleY
-            );
+            namePlacement.signaturePlacement = {
+                xPercent: signImage.x() / containerWidth,
+                yPercent: signImage.y() / containerHeight,
+                x: signImage.x(),
+                y: signImage.y(),
+                width: signChild.width(),
+                height: signChild.height(),
+                offsetX: signChild.offsetX(),
+                offsetY: signChild.offsetY(),
+                editorWidth: containerWidth,
+                editorHeight: containerHeight,
+                imageWidth: actualImageWidth,
+                imageHeight: actualImageHeight,
+                scaleX: actualImageWidth / containerWidth,
+                scaleY: actualImageHeight / containerHeight
+            };
+            
+            namePlacement.certificateGeneration.signaturePosition = {
+                x: signImage.x() * (actualImageWidth / containerWidth),
+                y: signImage.y() * (actualImageHeight / containerHeight),
+                width: signChild.width() * (actualImageWidth / containerWidth),
+                height: signChild.height() * (actualImageHeight / containerHeight),
+                offsetX: signChild.offsetX() * (actualImageWidth / containerWidth),
+                offsetY: signChild.offsetY() * (actualImageHeight / containerHeight)
+            };
         }
     }
-    
-    return canvas.toDataURL('image/jpeg', 0.9);
+
+    try {
+        // Reset opacity to ensure proper generation
+        if (nameText.opacity() !== 1) nameText.opacity(1);
+        if (signImage.opacity() !== 1) signImage.opacity(1);
+        
+        // Use the CertificateGenerator for consistent generation
+        const certificateUrl = bgImageObj.src;
+        return await CertificateGenerator.generateWithSignature({
+            certificateUrl: certificateUrl,
+            namePlacement: namePlacement,
+            participantName: speakerName,
+            signatureImage: signImageObj
+        });
+    } catch (error) {
+        console.error("Error using CertificateGenerator, falling back to manual generation:", error);
+        
+        // Fallback to manual generation
+        const canvas = document.createElement('canvas');
+        canvas.width = actualImageWidth;
+        canvas.height = actualImageHeight;
+        const ctx = canvas.getContext('2d');
+        
+        // Draw the background image
+        ctx.drawImage(bgImageObj, 0, 0, actualImageWidth, actualImageHeight);
+        
+        // Calculate proper scaling for text placement
+        const scaleX = actualImageWidth / containerWidth;
+        const scaleY = actualImageHeight / containerHeight;
+        
+        // Draw the speaker name
+        ctx.save();
+        ctx.font = `${nameText.fontStyle()} ${nameText.fontSize() * scaleY}px ${nameText.fontFamily()}`;
+        ctx.fillStyle = nameText.fill();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Add shadow if present
+        if (nameText.shadowColor()) {
+            ctx.shadowColor = nameText.shadowColor();
+            ctx.shadowBlur = nameText.shadowBlur();
+            ctx.shadowOffsetX = nameText.shadowOffset().x;
+            ctx.shadowOffsetY = nameText.shadowOffset().y;
+        }
+        
+        ctx.fillText(speakerName, nameText.x() * scaleX, nameText.y() * scaleY);
+        ctx.restore();
+        
+        // Draw signature if available with proper scaling
+        if (signImageObj && signImage.children.length > 0) {
+            const signChild = signImage.children[0];
+            if (signChild instanceof Konva.Image) {
+                const signX = signImage.x() * scaleX - (signChild.offsetX() * scaleX);
+                const signY = signImage.y() * scaleY - (signChild.offsetY() * scaleY);
+                const signWidth = signChild.width() * scaleX;
+                const signHeight = signChild.height() * scaleY;
+                
+                ctx.drawImage(
+                    signImageObj,
+                    signX,
+                    signY,
+                    signWidth,
+                    signHeight
+                );
+            }
+        }
+        
+        return canvas.toDataURL('image/jpeg', 0.9);
+    }
 }
 
-function downloadAllCertificates() {
+async function downloadAllCertificates() {
     if (speakerNames.length === 0) {
         alert('Please add at least one speaker name.');
         return;
@@ -508,9 +605,10 @@ function downloadAllCertificates() {
     }
     
     // Create and download certificates for each speaker
-    speakerNames.forEach((name, index) => {
-        setTimeout(() => {
-            const certificateDataURL = createCertificateWithName(name);
+    for (let i = 0; i < speakerNames.length; i++) {
+        const name = speakerNames[i];
+        try {
+            const certificateDataURL = await createCertificateWithName(name);
             if (certificateDataURL) {
                 const downloadLink = document.createElement('a');
                 downloadLink.href = certificateDataURL;
@@ -518,11 +616,19 @@ function downloadAllCertificates() {
                 document.body.appendChild(downloadLink);
                 downloadLink.click();
                 document.body.removeChild(downloadLink);
+                
+                // Add a small delay between downloads
+                if (i < speakerNames.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
             }
-        }, index * 500); // Delay each download by 500ms to avoid overwhelming the browser
-    });
+        } catch (error) {
+            console.error(`Error generating certificate for ${name}:`, error);
+            alert(`Error generating certificate for ${name}. Please try again.`);
+        }
+    }
     
-    // Close the modal after starting downloads
+    // Close the modal after completing all downloads
     document.getElementById('namesModal').classList.add('hidden');
 }
 
