@@ -118,6 +118,37 @@
     </div>
   </div>
 
+  <!-- Names Modal -->
+  <div id="namesModal" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-white rounded-xl p-8 flex flex-col items-center max-w-2xl w-full mx-4">
+        <h3 class="text-2xl font-bold mb-6 text-center">Add Speaker Names</h3>
+        <div class="w-full mb-4">
+          <div class="flex gap-2 mb-4">
+            <input type="text" id="nameInput" placeholder="Enter speaker name" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button id="addNameBtn" class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">Add</button>
+          </div>
+          <div id="namesList" class="max-h-60 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50">
+            <div id="namesContainer" class="space-y-2">
+              <!-- Names will be added here -->
+            </div>
+            <div id="emptyNamesMessage" class="text-gray-500 text-center py-8">
+              No names added yet. Add speaker names above.
+            </div>
+          </div>
+        </div>
+        <div class="flex gap-4">
+          <button id="downloadAllCertBtn" class="px-8 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition font-semibold">
+            Download All Certificates
+          </button>
+          <button id="closeNamesModalBtn" class="px-8 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     const uploadBtn = document.getElementById('uploadBtn');
     const templateUpload = document.getElementById('templateUpload');

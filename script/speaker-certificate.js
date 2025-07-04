@@ -402,6 +402,130 @@ document.getElementById('downloadCertBtn').addEventListener('click', function() 
     document.body.removeChild(downloadLink);
 });
 
+// Names modal functionality
+let speakerNames = [];
+
+function addName(name) {
+    if (name.trim() && !speakerNames.includes(name.trim())) {
+        speakerNames.push(name.trim());
+        updateNamesDisplay();
+        document.getElementById('nameInput').value = '';
+    }
+}
+
+// Make removeName globally accessible
+window.removeName = function(name) {
+    const index = speakerNames.indexOf(name);
+    if (index > -1) {
+        speakerNames.splice(index, 1);
+        updateNamesDisplay();
+    }
+}
+
+function updateNamesDisplay() {
+    const namesContainer = document.getElementById('namesContainer');
+    const emptyMessage = document.getElementById('emptyNamesMessage');
+    
+    if (speakerNames.length === 0) {
+        namesContainer.innerHTML = '';
+        emptyMessage.style.display = 'block';
+    } else {
+        emptyMessage.style.display = 'none';
+        namesContainer.innerHTML = speakerNames.map(name => `
+            <div class="flex items-center justify-between bg-white p-3 rounded-lg border border-gray-200">
+                <span class="font-medium">${name}</span>
+                <button onclick="removeName('${name}')" class="text-red-500 hover:text-red-700 font-bold text-lg">×</button>
+            </div>
+        `).join('');
+    }
+}
+
+function createCertificateWithName(speakerName) {
+    if (!nameText || !bgImageObj) {
+        console.error("Missing required elements for certificate generation");
+        return null;
+    }
+
+    const { width: containerWidth, height: containerHeight } = getResponsiveSize();
+    
+    // Create a new canvas for the certificate
+    const canvas = document.createElement('canvas');
+    canvas.width = actualImageWidth;
+    canvas.height = actualImageHeight;
+    const ctx = canvas.getContext('2d');
+    
+    // Draw the background image
+    ctx.drawImage(bgImageObj, 0, 0, actualImageWidth, actualImageHeight);
+    
+    // Calculate proper scaling for text placement
+    const scaleX = actualImageWidth / containerWidth;
+    const scaleY = actualImageHeight / containerHeight;
+    
+    // Draw the speaker name
+    ctx.save();
+    ctx.font = `${nameText.fontStyle()} ${nameText.fontSize() * scaleY}px ${nameText.fontFamily()}`;
+    ctx.fillStyle = nameText.fill();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Add shadow if present
+    if (nameText.shadowColor()) {
+        ctx.shadowColor = nameText.shadowColor();
+        ctx.shadowBlur = nameText.shadowBlur();
+        ctx.shadowOffsetX = nameText.shadowOffset().x;
+        ctx.shadowOffsetY = nameText.shadowOffset().y;
+    }
+    
+    ctx.fillText(speakerName, nameText.x() * scaleX, nameText.y() * scaleY);
+    ctx.restore();
+    
+    // Draw signature if available
+    if (signImageObj && signImage.children.length > 0) {
+        const signChild = signImage.children[0];
+        if (signChild instanceof Konva.Image) {
+            ctx.drawImage(
+                signImageObj,
+                signImage.x() * scaleX - (signChild.offsetX() * scaleX),
+                signImage.y() * scaleY - (signChild.offsetY() * scaleY),
+                signChild.width() * scaleX,
+                signChild.height() * scaleY
+            );
+        }
+    }
+    
+    return canvas.toDataURL('image/jpeg', 0.9);
+}
+
+function downloadAllCertificates() {
+    if (speakerNames.length === 0) {
+        alert('Please add at least one speaker name.');
+        return;
+    }
+    
+    if (!nameText || !bgImageObj) {
+        alert('Please upload a certificate template and position the name first.');
+        return;
+    }
+    
+    // Create and download certificates for each speaker
+    speakerNames.forEach((name, index) => {
+        setTimeout(() => {
+            const certificateDataURL = createCertificateWithName(name);
+            if (certificateDataURL) {
+                const downloadLink = document.createElement('a');
+                downloadLink.href = certificateDataURL;
+                downloadLink.download = `${name.replace(/[^a-zA-Z0-9]/g, '_')}_certificate.jpg`;
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+            }
+        }, index * 500); // Delay each download by 500ms to avoid overwhelming the browser
+    });
+    
+    // Close the modal after starting downloads
+    document.getElementById('namesModal').classList.add('hidden');
+}
+
 // No longer needed - removed Firebase/event dependencies
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -451,5 +575,66 @@ document.addEventListener('DOMContentLoaded', function() {
     layer.add(instructionText);
     layer.add(signImage);
     layer.draw();
+    
+    // Add event listeners for the names modal
+    const nextBtn = document.getElementById('savePlacementBtn');
+    const namesModal = document.getElementById('namesModal');
+    const nameInput = document.getElementById('nameInput');
+    const addNameBtn = document.getElementById('addNameBtn');
+    const downloadAllCertBtn = document.getElementById('downloadAllCertBtn');
+    const closeNamesModalBtn = document.getElementById('closeNamesModalBtn');
+    
+    // Next button opens the names modal
+    if (nextBtn) {
+        nextBtn.addEventListener('click', function() {
+            if (!nameText || !bgImageObj) {
+                document.getElementById('saveStatus').textContent = "Please upload a certificate template and position the name first.";
+                document.getElementById('saveStatus').style.color = "#ef4444";
+                setTimeout(() => {
+                    document.getElementById('saveStatus').textContent = "";
+                    document.getElementById('saveStatus').style.color = "#10b981";
+                }, 3000);
+                return;
+            }
+            
+            // Show the names modal
+            namesModal.classList.remove('hidden');
+            nameInput.focus();
+        });
+    }
+    
+    // Add name functionality
+    if (addNameBtn && nameInput) {
+        addNameBtn.addEventListener('click', function() {
+            addName(nameInput.value);
+        });
+        
+        nameInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addName(nameInput.value);
+            }
+        });
+    }
+    
+    // Download all certificates
+    if (downloadAllCertBtn) {
+        downloadAllCertBtn.addEventListener('click', downloadAllCertificates);
+    }
+    
+    // Close modal
+    if (closeNamesModalBtn) {
+        closeNamesModalBtn.addEventListener('click', function() {
+            namesModal.classList.add('hidden');
+        });
+    }
+    
+    // Close modal when clicking outside
+    if (namesModal) {
+        namesModal.addEventListener('click', function(e) {
+            if (e.target === namesModal) {
+                namesModal.classList.add('hidden');
+            }
+        });
+    }
 
 });
