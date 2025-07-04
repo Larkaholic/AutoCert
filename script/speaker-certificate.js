@@ -402,19 +402,6 @@ document.getElementById('downloadCertBtn').addEventListener('click', function() 
     document.body.removeChild(downloadLink);
 });
 
-function updateExpirationDisplay() {
-    const hours = Math.floor(expirationMinutes / 60);
-    const mins = expirationMinutes % 60;
-    const display = hours > 0 ? 
-        `${hours}h ${mins}m` : 
-        `${mins} mins`;
-    document.getElementById('expirationDisplay').textContent = display;
-}
-
-function calculateExpirationTime() {
-    return new Date(Date.now() + (expirationMinutes * 60 * 1000)).toISOString();
-}
-
 document.getElementById('savePlacementBtn').addEventListener('click', async function() {
     if (!nameText || !bgImageObj) {
         document.getElementById('saveStatus').textContent = "Please upload a certificate template and position the name.";
