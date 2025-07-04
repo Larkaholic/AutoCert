@@ -101,9 +101,6 @@
       const addBtn = document.getElementById('addQuestionBtn');
       const eventTitleInput = document.getElementById('eventTitle');
       const eventDescriptionInput = document.getElementById('eventDescription');
-      const eventDateInput = document.getElementById('eventDate');
-      const eventLocationInput = document.getElementById('eventLocation');
-      const eventOrganizerInput = document.getElementById('eventOrganizer');
       const saveBtn = document.getElementById('saveFormBtn');
       const output = document.getElementById('output');
       
@@ -218,6 +215,7 @@
       // fetch existing event data when page loads or event title changes
       function fetchEventData() {
         const eventTitle = eventTitleInput.value.trim();
+        console.log("Fetching data for event:", eventTitle);
         if (!eventTitle || eventTitle.length < 3) return;
         
         form.innerHTML = "";
@@ -225,17 +223,19 @@
         
         db.collection("events").doc(eventTitle).get()
           .then(doc => {
+            console.log("Document exists:", doc.exists);
             if (doc.exists) {
               const data = doc.data();
+              console.log("Event data:", data);
               
-              // populate event details
-              eventDescriptionInput.value = data.description || '';
-              if (data.date) eventDateInput.value = data.date;
-              eventLocationInput.value = data.location || '';
-              eventOrganizerInput.value = data.organizer || '';
+              // populate event details (only if elements exist)
+              if (eventDescriptionInput) {
+                eventDescriptionInput.value = data.description || '';
+              }
               
               // populate questions
               const questions = data.questions || [];
+              console.log("Questions found:", questions.length);
               
               questions.forEach(q => {
                 questionCount++;
@@ -266,13 +266,19 @@
             }
           })
           .catch(error => {
+            console.error("Error fetching from Firebase:", error);
             output.classList.remove("hidden");
             output.textContent = `Error fetching from Firebase: ${error.message}`;
           });
       }
       
+      let debounceTimer;
+      
       if (eventTitleInput) {
-        eventTitleInput.addEventListener('input', fetchEventData);
+        eventTitleInput.addEventListener('input', function() {
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(fetchEventData, 500); // 500ms delay
+        });
       }
       
       fetchEventData();
