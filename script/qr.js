@@ -6,13 +6,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // figure out where to point the qr code
     let feedbackUrl;
     if (location.hostname === "localhost" || location.hostname.startsWith("192.168.")) {
-        feedbackUrl = `${window.location.origin}/feedback-form-User.html?event=${encodeURIComponent(eventName)}`;
+        feedbackUrl = `${window.location.origin}/feedback-form-user.html?event=${encodeURIComponent(eventName)}`;
     } else {
-        feedbackUrl = `${location.protocol}//${location.host}/feedback-form-User.html?event=${encodeURIComponent(eventName)}`;
+        feedbackUrl = `${location.protocol}//${location.host}/feedback-form-user.html?event=${encodeURIComponent(eventName)}`;
         
         // if we're on github pages, use a different url
         if (location.host.includes('github.io')) {
-            feedbackUrl = `${location.protocol}//${location.host}/AutoCert/feedback-form-User.html?event=${encodeURIComponent(eventName)}`;
+            feedbackUrl = `${location.protocol}//${location.host}/AutoCert/feedback-form-user.html?event=${encodeURIComponent(eventName)}`;
         }
     }
 

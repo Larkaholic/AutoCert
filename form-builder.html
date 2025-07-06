@@ -259,10 +259,11 @@
                 `;
             }
             
-            // Skip certificate builder if booth question exists
+            // Skip certificate builder if booth question exists, show QR instead
             if (hasBoothQuestion) {
-                alert("Form created successfully! Since you're using booth selection, certificate setup is not required.");
-                // Stay on current page to show the QR code
+                // Open QR code page in new window
+                window.open(`qr.html?event=${encodeURIComponent(eventTitle)}`, '_blank', 'width=400,height=500');
+                alert("Form created successfully! Since you're using booth selection, certificate setup is not required. QR code opened in new window.");
             } else {
                 window.location.href = `certificate-builder.html?event=${encodeURIComponent(eventTitle)}`;
             }
