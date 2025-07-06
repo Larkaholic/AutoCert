@@ -50,6 +50,9 @@
             <li>Use mouse wheel to resize text.</li>
             <li>Double-click canvas names to edit them.</li>
             <li>Use "Add Names" to add multiple names to canvas.</li>
+            <li>Upload multiple signatures and click "Apply" to add them to canvas.</li>
+            <li>Double-click signatures on canvas to remove them.</li>
+            <li>Multiple signatures can be placed on the same canvas.</li>
           </ul>
         </div>
       </div>
@@ -71,9 +74,12 @@
             </div>
             <!-- Signature Upload -->
             <div class="flex flex-col items-center gap-4">
-              <label class="block font-bold text-lg text-white whitespace-nowrap">Upload Signature</label>
-              <button id="signatureUploadBtn" class="border border-[#3be382] rounded-full px-6 md:px-10 py-2 text-white font-semibold bg-transparent hover:bg-[#1a1a1a] transition">Upload</button>
-              <input type="file" id="signatureUpload" accept="image/png, image/jpeg" class="hidden"/>
+              <label class="block font-bold text-lg text-white whitespace-nowrap">Upload Signature(s)</label>
+              <div class="flex gap-2">
+                <button id="signatureUploadBtn" class="border border-[#3be382] rounded-full px-6 md:px-8 py-2 text-white font-semibold bg-transparent hover:bg-[#1a1a1a] transition">Upload</button>
+                <button id="manageSignaturesBtn" class="border border-[#3be382] rounded-full px-6 md:px-8 py-2 text-white font-semibold bg-transparent hover:bg-[#1a1a1a] transition">Manage</button>
+              </div>
+              <input type="file" id="signatureUpload" accept="image/png, image/jpeg" multiple class="hidden"/>
               <span id="signatureFileName" class="text-white text-sm ml-2"></span>
             </div>
           </div>
@@ -188,6 +194,30 @@
     </div>
   </div>
 
+  <!-- Signature Management Modal -->
+  <div id="signatureModal" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-white rounded-xl p-8 flex flex-col items-center max-w-2xl w-full mx-4">
+        <h3 class="text-2xl font-bold mb-6 text-center">Manage Signatures</h3>
+        <div class="w-full mb-4">
+          <div class="flex gap-2 mb-4">
+            <button onclick="document.getElementById('signatureUpload').click()" class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">
+              Upload More Signatures
+            </button>
+          </div>
+          <div id="signatureList" class="max-h-60 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-2">
+            <p class="text-gray-500 text-center py-4">No signatures uploaded</p>
+          </div>
+        </div>
+        <div class="flex gap-4">
+          <button id="closeSignatureModalBtn" class="px-8 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     const uploadBtn = document.getElementById('uploadBtn');
     const templateUpload = document.getElementById('templateUpload');
@@ -201,7 +231,6 @@
     const closePreviewBtn = document.getElementById('closePreviewBtn');
     const downloadCertBtn = document.getElementById('downloadCertBtn');
     const previewContainer = document.getElementById('previewContainer');
-    const expirationDisplay = document.getElementById('expirationDisplay');
 
     if (uploadBtn && templateUpload && fileName) {
       uploadBtn.onclick = () => templateUpload.click();
@@ -214,12 +243,51 @@
     const signatureUploadBtn = document.getElementById('signatureUploadBtn');
     const signatureUpload = document.getElementById('signatureUpload');
     const signatureFileName = document.getElementById('signatureFileName');
+    const manageSignaturesBtn = document.getElementById('manageSignaturesBtn');
+    const signatureModal = document.getElementById('signatureModal');
+    const closeSignatureModalBtn = document.getElementById('closeSignatureModalBtn');
 
     if (signatureUploadBtn && signatureUpload && signatureFileName) {
       signatureUploadBtn.onclick = () => signatureUpload.click();
       signatureUpload.onchange = () => {
-        signatureFileName.textContent = signatureUpload.files.length ? signatureUpload.files[0].name : 'No File Chosen';
+        const fileCount = signatureUpload.files.length;
+        if (fileCount > 0) {
+          signatureFileName.textContent = fileCount === 1 ? 
+            signatureUpload.files[0].name : 
+            `${fileCount} signature files selected`;
+        } else {
+          signatureFileName.textContent = 'No File Chosen';
+        }
       };
+    }
+
+    // Manage signatures button
+    if (manageSignaturesBtn) {
+      manageSignaturesBtn.addEventListener('click', function() {
+        if (typeof window.openSignatureModal === 'function') {
+          window.openSignatureModal();
+        } else {
+          console.error('openSignatureModal function not found');
+        }
+      });
+    }
+
+    // Close signature modal
+    if (closeSignatureModalBtn) {
+      closeSignatureModalBtn.addEventListener('click', function() {
+        if (signatureModal) {
+          signatureModal.classList.add('hidden');
+        }
+      });
+    }
+
+    // Close modal when clicking outside
+    if (signatureModal) {
+      signatureModal.addEventListener('click', function(e) {
+        if (e.target === signatureModal) {
+          signatureModal.classList.add('hidden');
+        }
+      });
     }
 
     // Add Names to Canvas functionality
@@ -383,13 +451,6 @@
     } else {
       console.log("CertificateGenerator loaded successfully");
     }
-
-    // Expiration time controls
-    let expirationTime = 30; // Default to 30 minutes
-    const updateExpirationDisplay = () => {
-      expirationDisplay.textContent = `${expirationTime} ${expirationTime === 1 ? 'min' : 'mins'}`;
-    };
-    updateExpirationDisplay();
 
     // Info modal logic
     const infoBtn = document.getElementById('infoBtn');

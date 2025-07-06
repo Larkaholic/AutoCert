@@ -2,6 +2,9 @@ let stage, layer, nameText, signImage, bgImageObj, signImageObj;
 let actualImageWidth, actualImageHeight;
 let expirationMinutes = 30; // default 30 minutes
 
+// Array to store all signature groups on canvas
+let canvasSignatures = [];
+
 function getResponsiveSize() {
     const container = document.getElementById('konvaContainer');
     return {
@@ -48,6 +51,9 @@ function initKonva(imageSrc) {
             shadowOffset: { x: 1, y: 1 },
             shadowOpacity: 0.5,
         });
+        
+        // Remove the old signImage placeholder creation
+        // signImage will be created when signatures are added
         
         // Create placeholder for signature image
         signImage = new Konva.Group({
@@ -161,6 +167,16 @@ window.addEventListener('resize', () => {
         shadowOpacity: nameText.shadowOpacity(),
     }));
     
+    // Store canvas signatures data before resize
+    const canvasSignaturesData = canvasSignatures.map(sig => ({
+        xPercent: sig.group.x() / getResponsiveSize().width,
+        yPercent: sig.group.y() / getResponsiveSize().height,
+        width: sig.group.children[0].width(),
+        height: sig.group.children[0].height(),
+        image: sig.image,
+        data: sig.data
+    }));
+    
     if (stage) stage.destroy();
     initKonva(bgImageObj.src);
     
@@ -246,27 +262,88 @@ window.addEventListener('resize', () => {
         }
     }, 100);
     
-    // Re-initialize signature group after resize
-    const { width, height } = getResponsiveSize();
-    if (!signImage) {
-        signImage = new Konva.Group({
-            x: width / 2,
-            y: height * 0.8,
-            draggable: true,
+    // Restore canvas signatures after resize
+    if (canvasSignaturesData.length > 0) {
+        const { width, height } = getResponsiveSize();
+        canvasSignatures = [];
+        
+        canvasSignaturesData.forEach(sigData => {
+            const signatureGroup = new Konva.Group({
+                x: sigData.xPercent * width,
+                y: sigData.yPercent * height,
+                draggable: true,
+            });
+            
+            const konvaSignImage = new Konva.Image({
+                image: sigData.image,
+                width: sigData.width,
+                height: sigData.height,
+                offsetX: sigData.width / 2,
+                offsetY: sigData.height / 2,
+            });
+            
+            // Add all event handlers
+            konvaSignImage.on('wheel', (e) => {
+                e.evt.preventDefault();
+                let currentWidth = konvaSignImage.width();
+                let currentHeight = konvaSignImage.height();
+                const scaleFactor = e.evt.deltaY < 0 ? 1.1 : 0.9;
+                
+                const newWidth = Math.min(300, Math.max(50, currentWidth * scaleFactor));
+                const newHeight = (newWidth / currentWidth) * currentHeight;
+                
+                konvaSignImage.width(newWidth);
+                konvaSignImage.height(newHeight);
+                konvaSignImage.offsetX(newWidth / 2);
+                konvaSignImage.offsetY(newHeight / 2);
+                
+                layer.batchDraw();
+            });
+            
+            konvaSignImage.on('mouseenter', function() {
+                document.body.style.cursor = 'move';
+                signatureGroup.opacity(0.8);
+                layer.draw();
+            });
+            
+            konvaSignImage.on('mouseleave', function() {
+                document.body.style.cursor = 'default';
+                signatureGroup.opacity(1);
+                layer.draw();
+            });
+            
+            signatureGroup.on('dragstart', function() {
+                this.opacity(0.6);
+                layer.draw();
+            });
+            
+            signatureGroup.on('dragend', function() {
+                this.opacity(1);
+                layer.draw();
+            });
+            
+            signatureGroup.on('dblclick', function() {
+                if (confirm('Remove this signature from canvas?')) {
+                    const index = canvasSignatures.findIndex(sig => sig.group === signatureGroup);
+                    if (index > -1) {
+                        canvasSignatures.splice(index, 1);
+                    }
+                    signatureGroup.destroy();
+                    layer.draw();
+                }
+            });
+            
+            signatureGroup.add(konvaSignImage);
+            layer.add(signatureGroup);
+            
+            canvasSignatures.push({
+                group: signatureGroup,
+                image: sigData.image,
+                data: sigData.data
+            });
         });
         
-        const signPlaceholder = new Konva.Text({
-            text: 'Upload signature image',
-            x: 0,
-            y: 0,
-            fontSize: Math.max(16, Math.floor(height / 20)),
-            fontFamily: 'Arial',
-            fill: 'gray',
-            fontStyle: 'italic',
-        });
-        signPlaceholder.offsetX(signPlaceholder.width() / 2);
-        signPlaceholder.offsetY(signPlaceholder.height() / 2);
-        signImage.add(signPlaceholder);
+        layer.draw();
     }
 });
 
@@ -283,78 +360,231 @@ document.getElementById('templateUpload').addEventListener('change', function(e)
 
 // Add signature upload functionality
 document.getElementById('signatureUpload').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
     
-    const reader = new FileReader();
-    reader.onload = function(evt) {
-        signImageObj = new Image();
-        signImageObj.onload = function() {
-            // Clear the signature group
-            signImage.removeChildren();
-            
-            // Calculate appropriate size for signature (max 150px width/height)
-            const maxSize = Math.min(150, stage.width() / 6);
-            const imageAspect = signImageObj.width / signImageObj.height;
-            let signWidth, signHeight;
-            
-            if (imageAspect > 1) {
-                signWidth = maxSize;
-                signHeight = maxSize / imageAspect;
-            } else {
-                signHeight = maxSize;
-                signWidth = maxSize * imageAspect;
-            }
-            
-            // Create Konva image
-            const konvaSignImage = new Konva.Image({
-                image: signImageObj,
-                width: signWidth,
-                height: signHeight,
-                offsetX: signWidth / 2,
-                offsetY: signHeight / 2,
-            });
-            
-            // Add mouse wheel resize functionality to signature
-            konvaSignImage.on('wheel', (e) => {
-                e.evt.preventDefault();
-                let currentWidth = konvaSignImage.width();
-                let currentHeight = konvaSignImage.height();
-                const scaleFactor = e.evt.deltaY < 0 ? 1.1 : 0.9;
+    // Process all selected files
+    Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            const signatureImage = new Image();
+            signatureImage.onload = function() {
+                // Add to signatures array
+                const signatureData = {
+                    id: Date.now() + Math.random(),
+                    name: file.name,
+                    image: signatureImage,
+                    src: evt.target.result
+                };
                 
-                // Limit size between 50px and 300px width
-                const newWidth = Math.min(300, Math.max(50, currentWidth * scaleFactor));
-                const newHeight = (newWidth / currentWidth) * currentHeight;
+                signatures.push(signatureData);
+                updateSignatureList();
                 
-                konvaSignImage.width(newWidth);
-                konvaSignImage.height(newHeight);
-                konvaSignImage.offsetX(newWidth / 2);
-                konvaSignImage.offsetY(newHeight / 2);
-                
-                layer.batchDraw();
-            });
-            
-            // Add hover effects for signature image
-            konvaSignImage.on('mouseenter', function() {
-                document.body.style.cursor = 'move';
-                signImage.opacity(0.8);
-                layer.draw();
-            });
-            
-            konvaSignImage.on('mouseleave', function() {
-                document.body.style.cursor = 'default';
-                signImage.opacity(1);
-                layer.draw();
-            });
-            
-            // Add to signature group
-            signImage.add(konvaSignImage);
-            layer.draw();
+                // If this is the first signature, apply it automatically
+                if (signatures.length === 1) {
+                    applySignature(signatureData);
+                }
+            };
+            signatureImage.src = evt.target.result;
         };
-        signImageObj.src = evt.target.result;
-    };
-    reader.readAsDataURL(file);
+        reader.readAsDataURL(file);
+    });
 });
+
+// Array to store multiple signatures
+let signatures = [];
+let currentSignature = null;
+
+// Function to update signature list display
+function updateSignatureList() {
+    const signatureList = document.getElementById('signatureList');
+    if (!signatureList) return;
+    
+    if (signatures.length === 0) {
+        signatureList.innerHTML = '<p class="text-gray-500 text-center py-4">No signatures uploaded</p>';
+        return;
+    }
+    
+    signatureList.innerHTML = signatures.map(sig => `
+        <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg ${currentSignature?.id === sig.id ? 'bg-green-50 border-green-300' : 'bg-white'}">
+            <div class="flex items-center gap-3">
+                <img src="${sig.src}" alt="${sig.name}" class="w-12 h-8 object-contain border border-gray-300 rounded">
+                <span class="font-medium text-sm">${sig.name}</span>
+                ${currentSignature?.id === sig.id ? '<span class="text-green-600 text-xs">(Active)</span>' : ''}
+            </div>
+            <div class="flex gap-2">
+                <button onclick="applySignature(${JSON.stringify(sig).replace(/"/g, '&quot;')})" 
+                        class="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition">
+                    Apply
+                </button>
+                <button onclick="removeSignature('${sig.id}')" 
+                        class="px-3 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600 transition">
+                    Remove
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Function to apply a signature to the canvas
+window.applySignature = function(signatureData) {
+    if (!layer) return;
+    
+    // Parse signature data if it's a string (from HTML onclick)
+    if (typeof signatureData === 'string') {
+        signatureData = JSON.parse(signatureData.replace(/&quot;/g, '"'));
+    }
+    
+    // Find the signature in our array (in case image object was lost in JSON parsing)
+    const signature = signatures.find(s => s.id === signatureData.id);
+    if (!signature) return;
+    
+    const { width, height } = getResponsiveSize();
+    
+    // Create a new signature group for this signature
+    const signatureGroup = new Konva.Group({
+        x: width / 2,
+        y: height * 0.8,
+        draggable: true,
+    });
+    
+    // Calculate appropriate size for signature (max 150px width/height)
+    const maxSize = Math.min(150, stage.width() / 6);
+    const imageAspect = signature.image.width / signature.image.height;
+    let signWidth, signHeight;
+    
+    if (imageAspect > 1) {
+        signWidth = maxSize;
+        signHeight = maxSize / imageAspect;
+    } else {
+        signHeight = maxSize;
+        signWidth = maxSize * imageAspect;
+    }
+    
+    // Create Konva image
+    const konvaSignImage = new Konva.Image({
+        image: signature.image,
+        width: signWidth,
+        height: signHeight,
+        offsetX: signWidth / 2,
+        offsetY: signHeight / 2,
+    });
+    
+    // Add mouse wheel resize functionality to signature
+    konvaSignImage.on('wheel', (e) => {
+        e.evt.preventDefault();
+        let currentWidth = konvaSignImage.width();
+        let currentHeight = konvaSignImage.height();
+        const scaleFactor = e.evt.deltaY < 0 ? 1.1 : 0.9;
+        
+        // Limit size between 50px and 300px width
+        const newWidth = Math.min(300, Math.max(50, currentWidth * scaleFactor));
+        const newHeight = (newWidth / currentWidth) * currentHeight;
+        
+        konvaSignImage.width(newWidth);
+        konvaSignImage.height(newHeight);
+        konvaSignImage.offsetX(newWidth / 2);
+        konvaSignImage.offsetY(newHeight / 2);
+        
+        layer.batchDraw();
+    });
+    
+    // Add hover effects for signature image
+    konvaSignImage.on('mouseenter', function() {
+        document.body.style.cursor = 'move';
+        signatureGroup.opacity(0.8);
+        layer.draw();
+    });
+    
+    konvaSignImage.on('mouseleave', function() {
+        document.body.style.cursor = 'default';
+        signatureGroup.opacity(1);
+        layer.draw();
+    });
+    
+    // Add drag feedback for signature group
+    signatureGroup.on('dragstart', function() {
+        this.opacity(0.6);
+        layer.draw();
+    });
+    
+    signatureGroup.on('dragend', function() {
+        this.opacity(1);
+        layer.draw();
+    });
+    
+    // Add double-click to remove signature from canvas
+    signatureGroup.on('dblclick', function() {
+        if (confirm('Remove this signature from canvas?')) {
+            const index = canvasSignatures.findIndex(sig => sig.group === signatureGroup);
+            if (index > -1) {
+                canvasSignatures.splice(index, 1);
+            }
+            signatureGroup.destroy();
+            layer.draw();
+        }
+    });
+    
+    // Add to signature group
+    signatureGroup.add(konvaSignImage);
+    layer.add(signatureGroup);
+    
+    // Store signature data for later use
+    canvasSignatures.push({
+        group: signatureGroup,
+        image: signature.image,
+        data: signature
+    });
+    
+    layer.draw();
+    
+    // Close the signature modal if open
+    const signatureModal = document.getElementById('signatureModal');
+    if (signatureModal) {
+        signatureModal.classList.add('hidden');
+    }
+};
+
+// Function to remove a signature
+window.removeSignature = function(signatureId) {
+    signatures = signatures.filter(sig => sig.id !== signatureId);
+    
+    // If the removed signature was the current one, clear the canvas
+    if (currentSignature && currentSignature.id === signatureId) {
+        currentSignature = null;
+        signImageObj = null;
+        
+        // Clear the signature group and add placeholder
+        if (signImage) {
+            signImage.removeChildren();
+            const { width, height } = getResponsiveSize();
+            const signPlaceholder = new Konva.Text({
+                text: 'Upload signature image',
+                x: 0,
+                y: 0,
+                fontSize: Math.max(16, Math.floor(height / 20)),
+                fontFamily: 'Arial',
+                fill: 'gray',
+                fontStyle: 'italic',
+            });
+            signPlaceholder.offsetX(signPlaceholder.width() / 2);
+            signPlaceholder.offsetY(signPlaceholder.height() / 2);
+            signImage.add(signPlaceholder);
+            layer.draw();
+        }
+    }
+    
+    updateSignatureList();
+};
+
+// Function to open signature management modal
+window.openSignatureModal = function() {
+    const signatureModal = document.getElementById('signatureModal');
+    if (signatureModal) {
+        updateSignatureList();
+        signatureModal.classList.remove('hidden');
+    }
+};
 
 function createCertificatePreview(sampleName = "John Doe") {
     if (!nameText || !bgImageObj) {
@@ -466,6 +696,23 @@ function createCertificatePreview(sampleName = "John Doe") {
             previewLayer.add(previewSignImage);
         }
     }
+
+    // Add all canvas signatures with proper scaling
+    canvasSignatures.forEach(sig => {
+        const signChild = sig.group.children[0];
+        if (signChild instanceof Konva.Image) {
+            const previewSignImage = new Konva.Image({
+                image: sig.image,
+                x: sig.group.x() * scaleX,
+                y: sig.group.y() * scaleY,
+                width: signChild.width() * scaleX,
+                height: signChild.height() * scaleY,
+                offsetX: signChild.offsetX() * scaleX,
+                offsetY: signChild.offsetY() * scaleY,
+            });
+            previewLayer.add(previewSignImage);
+        }
+    });
 
     previewLayer.draw();
 
@@ -740,6 +987,25 @@ async function createCertificateWithName(speakerName) {
             );
         }
     }
+    
+    // Draw all canvas signatures with proper scaling
+    canvasSignatures.forEach(sig => {
+        const signChild = sig.group.children[0];
+        if (signChild instanceof Konva.Image) {
+            const signX = sig.group.x() * scaleX - (signChild.offsetX() * scaleX);
+            const signY = sig.group.y() * scaleY - (signChild.offsetY() * scaleY);
+            const signWidth = signChild.width() * scaleX;
+            const signHeight = signChild.height() * scaleY;
+            
+            ctx.drawImage(
+                sig.image,
+                signX,
+                signY,
+                signWidth,
+                signHeight
+            );
+        }
+    });
     
     const dataURL = canvas.toDataURL('image/jpeg', 0.9);
     console.log("Certificate generation complete");
@@ -1120,18 +1386,35 @@ window.showPreview = function() {
     if (signImageObj && signImage.children.length > 0) {
         const signChild = signImage.children[0];
         if (signChild instanceof Konva.Image) {
-            const previewSignature = new Konva.Image({
+            const previewSignImage = new Konva.Image({
                 image: signImageObj,
                 x: signImage.x() * scaleX,
                 y: signImage.y() * scaleY,
                 width: signChild.width() * scaleX,
                 height: signChild.height() * scaleY,
+                offsetX: signChild.offsetX() * scaleX,
+                offsetY: signChild.offsetY() * scaleY,
             });
-            previewSignature.offsetX(previewSignature.width() / 2);
-            previewSignature.offsetY(previewSignature.height() / 2);
-            previewLayer.add(previewSignature);
+            previewLayer.add(previewSignImage);
         }
     }
+
+    // Add all canvas signatures with proper scaling
+    canvasSignatures.forEach(sig => {
+        const signChild = sig.group.children[0];
+        if (signChild instanceof Konva.Image) {
+            const previewSignImage = new Konva.Image({
+                image: sig.image,
+                x: sig.group.x() * scaleX,
+                y: sig.group.y() * scaleY,
+                width: signChild.width() * scaleX,
+                height: signChild.height() * scaleY,
+                offsetX: signChild.offsetX() * scaleX,
+                offsetY: signChild.offsetY() * scaleY,
+            });
+            previewLayer.add(previewSignImage);
+        }
+    });
 
     previewLayer.draw();
 
@@ -1142,7 +1425,7 @@ window.showPreview = function() {
     previewModal.classList.remove('hidden');
 };
 
-// Enhanced download function that includes all canvas names
+// Enhanced download function that includes all canvas signatures
 window.downloadPreviewCertificate = function() {
     // If preview stage exists, use it
     if (window.currentPreviewStage) {
@@ -1233,6 +1516,19 @@ window.downloadPreviewCertificate = function() {
             ctx.drawImage(signImageObj, signX, signY, signWidth, signHeight);
         }
     }
+    
+    // Draw all canvas signatures
+    canvasSignatures.forEach(sig => {
+        const signChild = sig.group.children[0];
+        if (signChild instanceof Konva.Image) {
+            const signX = sig.group.x() * scaleX - (signChild.offsetX() * scaleX);
+            const signY = sig.group.y() * scaleY - (signChild.offsetY() * scaleY);
+            const signWidth = signChild.width() * scaleX;
+            const signHeight = signChild.height() * scaleY;
+            
+            ctx.drawImage(sig.image, signX, signY, signWidth, signHeight);
+        }
+    });
     
     // Download the generated certificate
     const dataURL = canvas.toDataURL('image/jpeg', 0.9);
