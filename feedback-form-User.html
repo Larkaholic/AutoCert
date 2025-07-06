@@ -299,6 +299,42 @@
                   collegeDiv.appendChild(optionGroup);
                 });
                 questionCard.appendChild(collegeDiv);
+              } else if (q.type === 'booth') {
+                // Booth Selection radio group
+                const boothDiv = document.createElement('div');
+                boothDiv.className = 'flex flex-col gap-3';
+                
+                if (q.options && q.options.length > 0) {
+                  q.options.forEach((booth, boothIndex) => {
+                    const optionGroup = document.createElement('div');
+                    optionGroup.className = 'flex items-center gap-3';
+                    
+                    const radio = document.createElement('input');
+                    radio.type = 'radio';
+                    radio.name = `question_${index}`;
+                    radio.value = booth;
+                    radio.id = `question_${index}_booth_${boothIndex}`;
+                    radio.className = 'form-radio h-5 w-5 text-[#3be382] cursor-pointer';
+                    radio.required = true;
+                    
+                    const label = document.createElement('label');
+                    label.htmlFor = radio.id;
+                    label.className = 'text-white cursor-pointer';
+                    label.textContent = booth;
+                    
+                    optionGroup.appendChild(radio);
+                    optionGroup.appendChild(label);
+                    boothDiv.appendChild(optionGroup);
+                  });
+                } else {
+                  // Fallback if no booth options are configured
+                  const noOptionsDiv = document.createElement('div');
+                  noOptionsDiv.className = 'text-gray-400 italic';
+                  noOptionsDiv.textContent = 'No booth options configured';
+                  boothDiv.appendChild(noOptionsDiv);
+                }
+                
+                questionCard.appendChild(boothDiv);
               } else {
                 // Create text input (default)
                 const input = document.createElement('input');
@@ -379,6 +415,16 @@
             responses.push({
               question: q.text,
               answer: answer,
+              type: q.type
+            });
+          }
+        } else if (q.type === 'booth') {
+          // Booth Selection: get selected booth
+          const selectedBooth = document.querySelector(`input[name="question_${index}"]:checked`);
+          if (selectedBooth) {
+            responses.push({
+              question: q.text,
+              answer: selectedBooth.value,
               type: q.type
             });
           }

@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
           <option value="rating" style="background-color: #232b2b;">Rating (1-5)</option>
           <option value="college" style="background-color: #232b2b;">College/Department</option>
           <option value="likelihood" style="background-color: #232b2b;">Likelihood Scale</option>
+          <option value="booth" style="background-color: #232b2b;">Booth Selection</option>
       </select>
       <button type="button" class="remove-btn text-red-600 hover:underline">Remove</button>
     `;
@@ -110,6 +111,7 @@ document.addEventListener('DOMContentLoaded', function() {
                   <option value="rating" style="background-color: #232b2b;"${q.type === "rating" ? " selected" : ""}>Rating (1-5)</option>
                   <option value="college" style="background-color: #232b2b;"${q.type === "college" ? " selected" : ""}>College/Department</option>
                   <option value="likelihood" style="background-color: #232b2b;"${q.type === "likelihood" ? " selected" : ""}>Likelihood Scale</option>
+                  <option value="booth" style="background-color: #232b2b;"${q.type === "booth" ? " selected" : ""}>Booth Selection</option>
               </select>
               <button type="button" class="remove-btn text-red-600 hover:underline">Remove</button>
             `;
@@ -159,6 +161,22 @@ function createQuestionCard(question, index) {
                 </select>
             `;
             break;
+        case 'booth':
+            if (question.options && question.options.length > 0) {
+                answerPreview = `
+                    <div class="flex flex-col gap-2">
+                        ${question.options.map(option => `
+                            <div class="flex items-center gap-3">
+                                <input type="radio" name="preview_booth_${index}" disabled>
+                                <label class="text-white">${option}</label>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else {
+                answerPreview = `<p class="text-gray-400">No booth options configured</p>`;
+            }
+            break;
         case 'likelihood':
             answerPreview = `
                 <div class="flex flex-col gap-2">
@@ -204,6 +222,7 @@ function createQuestionCard(question, index) {
                     <option value="rating"${question.type === 'rating' ? ' selected' : ''}>Rating (1-5)</option>
                     <option value="college"${question.type === 'college' ? ' selected' : ''}>College/Department</option>
                     <option value="likelihood"${question.type === 'likelihood' ? ' selected' : ''}>Likelihood Scale</option>
+                    <option value="booth"${question.type === 'booth' ? ' selected' : ''}>Booth Selection</option>
                 </select>
             </div>
             <div>
@@ -259,6 +278,7 @@ function createQuestionTypeSelect() {
             <option value="rating">Rating (1-5)</option>
             <option value="college">College/Department</option>
             <option value="likelihood">Likelihood Scale</option>
+            <option value="booth">Booth Selection</option>
         </select>
     `;
 }

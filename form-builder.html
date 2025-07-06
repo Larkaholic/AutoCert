@@ -78,7 +78,7 @@
         Next
       </button>
     </div>
-    <pre id="output" class="mt-6 bg-gray-100 p-4 rounded text-sm text-gray-800 hidden"></pre>
+    <pre id="output" class="mt-6 bg-black/20 border border-[#3be382] p-4 rounded-xl text-sm text-white hidden"></pre>
   </div>
 
   <script>
@@ -127,18 +127,56 @@
               <option value="textarea" style="background-color: #232b2b;">Long Text</option>
               <option value="college" style="background-color: #232b2b;">College/Department</option>
               <option value="likelihood" style="background-color: #232b2b;">Likelihood Scale</option>
+              <option value="booth" style="background-color: #232b2b;">Booth Selection</option>
           </select>
           <button type="button" class="remove-btn text-red-600 hover:underline">Remove</button>
+          <div class="booth-options hidden w-full mt-2">
+            <div class="mb-2">
+              <label class="block text-sm text-gray-400">Booth Names:</label>
+              <div class="booth-list flex flex-col gap-2"></div>
+              <button type="button" class="add-booth-btn mt-2 px-3 py-1 bg-[#3be382] text-black rounded hover:bg-[#2a9e63] transition text-sm">Add Booth</button>
+            </div>
+          </div>
         `;
         
         form.appendChild(questionDiv);
 
-        // Add event listener for auto-filling question input if type is college
+        // Add event listener for auto-filling question input if type is college or booth
         const select = questionDiv.querySelector('select[name="type"]');
         const input = questionDiv.querySelector('input[name="question"]');
+        const boothOptions = questionDiv.querySelector('.booth-options');
+        
         select.addEventListener('change', function() {
           if (select.value === 'college') {
             input.value = 'College/Department';
+            boothOptions.classList.add('hidden');
+          } else if (select.value === 'booth') {
+            input.value = 'Which booth is the best?';
+            boothOptions.classList.remove('hidden');
+          } else {
+            boothOptions.classList.add('hidden');
+          }
+        });
+
+        // Add booth functionality
+        const addBoothBtn = questionDiv.querySelector('.add-booth-btn');
+        const boothList = questionDiv.querySelector('.booth-list');
+        
+        addBoothBtn.addEventListener('click', function() {
+          const boothInput = document.createElement('div');
+          boothInput.className = 'flex items-center gap-2';
+          boothInput.innerHTML = `
+            <input type="text" name="booth-option" placeholder="Booth Name" 
+                class="flex-1 p-2 border border-gray-300 bg-transparent text-white rounded text-sm" />
+            <button type="button" class="remove-booth-btn text-red-600 hover:underline text-sm">Remove</button>
+          `;
+          boothList.appendChild(boothInput);
+        });
+
+        // Remove booth functionality
+        questionDiv.addEventListener('click', function(e) {
+          if (e.target.classList.contains('remove-booth-btn')) {
+            e.target.closest('div').remove();
           }
         });
       });
@@ -168,7 +206,12 @@
             questions.push({
               text: input.value.trim(),
               type: select ? select.value : "text",
-              createdAt: new Date().toISOString()
+              createdAt: new Date().toISOString(),
+              ...(select && select.value === 'booth' && {
+                options: Array.from(div.querySelectorAll('input[name="booth-option"]'))
+                  .map(boothInput => boothInput.value.trim())
+                  .filter(booth => booth)
+              })
             });
           }
         });
@@ -191,25 +234,52 @@
             let feedbackUrl;
             feedbackUrl = `./feedback-form-user.html?event=${encodeURIComponent(eventTitle)}`;
             
-            // displaying of feedback form using QR code 
+            // Check if any question is of type 'booth'
+            const hasBoothQuestion = questions.some(q => q.type === 'booth');
+            
+            // Always display feedback form QR code
             const output = document.getElementById('output');
             if (output) {
                 output.classList.remove("hidden");
                 output.innerHTML = `
                     <div class="p-4 bg-black/20 rounded-xl border border-[#3be382] mb-4">
-                        <p class="text-white mb-2">Feedback form created! Share this URL with attendees:</p>
-                        <div class="bg-white/10 p-2 rounded mb-2 break-all">
-                            <a href="${feedbackUrl}" target="_blank" class="text-[#3be382] hover:underline">${window.location.origin}${window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'))}/${feedbackUrl}</a>
+                        <p class="text-white mb-2">✅ Feedback form created successfully!</p>
+                        <p class="text-gray-300 mb-3">Share this URL with attendees:</p>
+                        <div class="bg-white/10 p-3 rounded-lg mb-3 break-all">
+                            <a href="${feedbackUrl}" target="_blank" class="text-[#3be382] hover:underline text-sm">${window.location.origin}${window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'))}/${feedbackUrl}</a>
                         </div>
+                        <div class="text-center">
+                            <button onclick="navigator.clipboard.writeText('${window.location.origin}${window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'))}/${feedbackUrl}')" 
+                                class="bg-[#3be382] text-black px-4 py-2 rounded-lg hover:bg-[#2a9e63] transition font-medium">
+                                📋 Copy URL
+                            </button>
+                        </div>
+                        ${hasBoothQuestion ? '<p class="text-yellow-400 text-sm mt-3">ℹ️ Note: Booth selection detected - certificate setup will be skipped.</p>' : ''}
                     </div>
                 `;
             }
-            window.location.href = `certificate-builder.html?event=${encodeURIComponent(eventTitle)}`;
+            
+            // Skip certificate builder if booth question exists
+            if (hasBoothQuestion) {
+                alert("Form created successfully! Since you're using booth selection, certificate setup is not required.");
+                // Stay on current page to show the QR code
+            } else {
+                window.location.href = `certificate-builder.html?event=${encodeURIComponent(eventTitle)}`;
+            }
         })
         .catch((error) => {
-            output.classList.remove("hidden");
-            output.textContent = `Error saving to Firebase: ${error.message}`;
+            const output = document.getElementById('output');
+            if (output) {
+                output.classList.remove("hidden");
+                output.innerHTML = `
+                    <div class="p-4 bg-red-900/20 rounded-xl border border-red-500 mb-4">
+                        <p class="text-red-400 mb-2">❌ Error saving to Firebase:</p>
+                        <p class="text-red-300 text-sm">${error.message}</p>
+                    </div>
+                `;
+            }
         });
+
       });
 
       // fetch existing event data when page loads or event title changes
@@ -250,16 +320,63 @@
                       <option value="textarea" style="background-color: #232b2b;"${q.type === "textarea" ? " selected" : ""}>Long Text</option>
                       <option value="college" style="background-color: #232b2b;"${q.type === "college" ? " selected" : ""}>College/Department</option>
                       <option value="likelihood" style="background-color: #232b2b;"${q.type === "likelihood" ? " selected" : ""}>Likelihood Scale</option>
+                      <option value="booth" style="background-color: #232b2b;"${q.type === "booth" ? " selected" : ""}>Booth Selection</option>
                   </select>
                   <button type="button" class="remove-btn text-red-600 hover:underline">Remove</button>
+                  <div class="booth-options ${q.type === 'booth' ? '' : 'hidden'} w-full mt-2">
+                    <div class="mb-2">
+                      <label class="block text-sm text-gray-400">Booth Names:</label>
+                      <div class="booth-list flex flex-col gap-2">
+                        ${q.options ? q.options.map(option => `
+                          <div class="flex items-center gap-2">
+                            <input type="text" name="booth-option" value="${option}" 
+                                class="flex-1 p-2 border border-gray-300 bg-transparent text-white rounded text-sm" />
+                            <button type="button" class="remove-booth-btn text-red-600 hover:underline text-sm">Remove</button>
+                          </div>
+                        `).join('') : ''}
+                      </div>
+                      <button type="button" class="add-booth-btn mt-2 px-3 py-1 bg-[#3be382] text-black rounded hover:bg-[#2a9e63] transition text-sm">Add Booth</button>
+                    </div>
+                  </div>
                 `;
                 form.appendChild(questionDiv);
-                // Add event listener for auto-filling question input if type is college
+                
+                // Add event listener for auto-filling question input if type is college or booth
                 const select = questionDiv.querySelector('select[name="type"]');
                 const input = questionDiv.querySelector('input[name="question"]');
+                const boothOptions = questionDiv.querySelector('.booth-options');
+                
                 select.addEventListener('change', function() {
                   if (select.value === 'college') {
                     input.value = 'College/Department';
+                    boothOptions.classList.add('hidden');
+                  } else if (select.value === 'booth') {
+                    input.value = 'Which booth is the best?';
+                    boothOptions.classList.remove('hidden');
+                  } else {
+                    boothOptions.classList.add('hidden');
+                  }
+                });
+
+                // Add booth functionality
+                const addBoothBtn = questionDiv.querySelector('.add-booth-btn');
+                const boothList = questionDiv.querySelector('.booth-list');
+                
+                addBoothBtn.addEventListener('click', function() {
+                  const boothInput = document.createElement('div');
+                  boothInput.className = 'flex items-center gap-2';
+                  boothInput.innerHTML = `
+                    <input type="text" name="booth-option" placeholder="Booth Name" 
+                        class="flex-1 p-2 border border-gray-300 bg-transparent text-white rounded text-sm" />
+                    <button type="button" class="remove-booth-btn text-red-600 hover:underline text-sm">Remove</button>
+                  `;
+                  boothList.appendChild(boothInput);
+                });
+
+                // Remove booth functionality
+                questionDiv.addEventListener('click', function(e) {
+                  if (e.target.classList.contains('remove-booth-btn')) {
+                    e.target.closest('div').remove();
                   }
                 });
               });
