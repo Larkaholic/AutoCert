@@ -48,10 +48,10 @@ function showAnswersModal(question, answers) {
     modalAnswers.style.paddingTop = '2.5rem'; // Add top padding for button
     modalAnswers.innerHTML = `
         <h4 class="text-[#3be382] font-bold mb-4">${question}</h4>
-        <ul class="list-disc ml-6 space-y-3 max-h-screen overflow-y-auto my-10">
+        <ul class="list-disc ml-6 space-y-5 max-h-[80vh] overflow-y-auto pb-16">
             ${answers.map(answer => `
-                <li class="text-white">
-                    <div class="bg-black/20 p-4 rounded-lg">${answer}</div>
+                <li class="text-white overflow-auto mb-5">
+                    <div class="bg-black/20 p-4 rounded-lg overflow-x-auto">${answer}</div>
                 </li>
             `).join('')}
         </ul>
@@ -126,7 +126,7 @@ function showCollegeModal(question, answers) {
         <h4 class="text-[#3be382] font-bold mb-4 mt-6">${question}</h4>
         <ul class="list-disc ml-6 space-y-3">
             ${sorted.map(([answer, count]) => `
-                <li class="text-white">
+                <li class="text-white overflow-x-auto">
                     <div class="bg-black/20 p-4 rounded-lg">${answer} <span class="text-[#3be382] font-bold ml-2">(${count})</span></div>
                 </li>
             `).join('')}
@@ -153,7 +153,7 @@ function showBoothModal(question, counts) {
         <div class="text-white text-sm mb-4">Total votes: ${totalVotes}</div>
         <ul class="list-none space-y-3">
             ${sorted.map(([booth, count], index) => `
-                <li class="text-white">
+                <li class="text-white overflow-x-auto">
                     <div class="bg-black/20 p-4 rounded-lg flex justify-between items-center">
                         <span class="flex items-center">
                             ${index === 0 ? '<span class="text-yellow-400 mr-2">🏆</span>' : `<span class="text-gray-400 mr-2">#${index + 1}</span>`}
@@ -269,7 +269,7 @@ async function displayEventResponses(eventId) {
 
                 if (answers.length > 0) {
                     questionDiv.innerHTML += `
-                        <div class="space-y-2">
+                        <div class="space-y-2 overflow-x-auto">
                             <div class="bg-black/20 p-4 rounded-lg mb-2 text-white">${answers[0]}</div>
                             <p class="text-[#3be382] text-sm">Click to view all ${answers.length} responses (sorted)</p>
                         </div>
@@ -289,7 +289,7 @@ async function displayEventResponses(eventId) {
 
                 if (answers.length > 0) {
                     questionDiv.innerHTML += `
-                        <div class="space-y-2">
+                        <div class="space-y-2 overflow-x-auto mb-10">
                             <div class="bg-black/20 p-4 rounded-lg mb-2 text-white">${answers[0]}</div>
                             <p class="text-[#3be382] text-sm">Click to view all ${answers.length} responses</p>
                         </div>
