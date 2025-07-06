@@ -44,10 +44,12 @@
           </svg>
         </button>
         <div id="infoModal" class="hidden absolute right-0 mt-2 w-80 bg-black/90 border border-[#3be382] rounded-xl p-5 text-white text-sm shadow-xl">
-          <div class="font-semibold mb-2 text-[#3be382]">Tip</div>
+          <div class="font-semibold mb-2 text-[#3be382]">Tips</div>
           <ul class="list-disc list-inside text-gray-200">
-            <li>Drag the name to position it.</li>
-            <li>Use mouse wheel to resize the text.</li>
+            <li>Drag any text to reposition it.</li>
+            <li>Use mouse wheel to resize text.</li>
+            <li>Double-click canvas names to edit them.</li>
+            <li>Use "Add Names" to add multiple names to canvas.</li>
           </ul>
         </div>
       </div>
@@ -339,92 +341,16 @@
 
     if (previewCertBtn) {
       previewCertBtn.addEventListener('click', function() {
-        // Open preview modal
-        previewModal.classList.remove('hidden');
-
-        // Render the current certificate state in the preview container
-        const stage = new Konva.Stage({
-          container: 'previewContainer',
-          width: 800,
-          height: 600
-        });
-
-        const layer = new Konva.Layer();
-        stage.add(layer);
-
-        // Add the uploaded image
-        if (templateUpload.files && templateUpload.files[0]) {
-          const reader = new FileReader();
-          reader.onload = function(evt) {
-            const img = new Image();
-            img.onload = function() {
-              const konvaImage = new Konva.Image({
-                x: 0,
-                y: 0,
-                width: stage.width(),
-                height: stage.height(),
-                draggable: false
-              });
-              konvaImage.image(img);
-              layer.add(konvaImage);
-              layer.batchDraw();
-            };
-            img.src = evt.target.result;
-          };
-          reader.readAsDataURL(templateUpload.files[0]);
+        // Use the existing preview function from speaker-certificate.js
+        if (typeof window.showPreview === 'function') {
+          window.showPreview();
+        } else {
+          // Fallback to original preview if function not available
+          previewModal.classList.remove('hidden');
+          if (typeof window.createCertificatePreview === 'function') {
+            window.createCertificatePreview();
+          }
         }
-
-        // Add text elements for name and other details
-        // These should match the ones in the editor for accurate preview
-        const nameText = new Konva.Text({
-          x: 50,
-          y: 50,
-          text: 'John Doe', // Placeholder text, replace with actual data
-          fontSize: 30,
-          fontFamily: 'Calibri',
-          fill: 'white',
-          draggable: true
-        });
-        layer.add(nameText);
-
-        // Add signature image if available
-        const signatureUpload = document.getElementById('signatureUpload');
-        if (signatureUpload.files && signatureUpload.files[0]) {
-          const reader = new FileReader();
-          reader.onload = function(evt) {
-            const img = new Image();
-            img.onload = function() {
-              // Calculate appropriate size while maintaining aspect ratio
-              const maxSize = Math.min(150, stage.width() / 6);
-              const imageAspect = img.width / img.height;
-              let signWidth, signHeight;
-              
-              if (imageAspect > 1) {
-                signWidth = maxSize;
-                signHeight = maxSize / imageAspect;
-              } else {
-                signHeight = maxSize;
-                signWidth = maxSize * imageAspect;
-              }
-              
-              const konvaSignature = new Konva.Image({
-                x: 50,
-                y: 100, // Adjust Y position as needed
-                width: signWidth,
-                height: signHeight,
-                draggable: true
-              });
-              konvaSignature.image(img);
-              layer.add(konvaSignature);
-              layer.batchDraw();
-            };
-            img.src = evt.target.result;
-          };
-          reader.readAsDataURL(signatureUpload.files[0]);
-        }
-
-        // Update the stage to show the new elements
-        layer.draw();
       });
     }
 
@@ -438,12 +364,16 @@
 
     if (downloadCertBtn) {
       downloadCertBtn.addEventListener('click', function() {
-        // Generate the certificate file (e.g., PDF) with the current settings
-        // This is a placeholder implementation, replace with actual file generation logic
-        const link = document.createElement('a');
-        link.href = templateUpload.files.length ? URL.createObjectURL(templateUpload.files[0]) : '#';
-        link.download = 'certificate-sample.png';
-        link.click();
+        // Use the existing download function from speaker-certificate.js
+        if (typeof window.downloadPreviewCertificate === 'function') {
+          window.downloadPreviewCertificate();
+        } else {
+          // Fallback to original download if function not available
+          const link = document.createElement('a');
+          link.href = templateUpload.files.length ? URL.createObjectURL(templateUpload.files[0]) : '#';
+          link.download = 'certificate-sample.png';
+          link.click();
+        }
       });
     }
 

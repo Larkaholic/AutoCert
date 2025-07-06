@@ -145,8 +145,106 @@ function initKonva(imageSrc) {
 
 window.addEventListener('resize', () => {
     if (!bgImageObj || !bgImageObj.src) return;
+    
+    // Store canvas names data before resize
+    const canvasNamesData = canvasNameTexts.map(nameText => ({
+        text: nameText.text(),
+        xPercent: nameText.x() / getResponsiveSize().width,
+        yPercent: nameText.y() / getResponsiveSize().height,
+        fontSize: nameText.fontSize(),
+        fontFamily: nameText.fontFamily(),
+        fontStyle: nameText.fontStyle(),
+        fill: nameText.fill(),
+        shadowColor: nameText.shadowColor(),
+        shadowBlur: nameText.shadowBlur(),
+        shadowOffset: nameText.shadowOffset(),
+        shadowOpacity: nameText.shadowOpacity(),
+    }));
+    
     if (stage) stage.destroy();
     initKonva(bgImageObj.src);
+    
+    // Restore canvas names after resize
+    setTimeout(() => {
+        if (canvasNamesData.length > 0) {
+            const { width, height } = getResponsiveSize();
+            canvasNameTexts = [];
+            
+            canvasNamesData.forEach(nameData => {
+                const nameTextObj = new Konva.Text({
+                    text: nameData.text,
+                    x: nameData.xPercent * width,
+                    y: nameData.yPercent * height,
+                    fontSize: nameData.fontSize,
+                    fontFamily: nameData.fontFamily,
+                    fill: nameData.fill,
+                    draggable: true,
+                    fontStyle: nameData.fontStyle,
+                    shadowColor: nameData.shadowColor,
+                    shadowBlur: nameData.shadowBlur,
+                    shadowOffset: nameData.shadowOffset,
+                    shadowOpacity: nameData.shadowOpacity,
+                });
+                
+                // Center the text
+                nameTextObj.offsetX(nameTextObj.width() / 2);
+                nameTextObj.offsetY(nameTextObj.height() / 2);
+                
+                // Add event handlers
+                nameTextObj.on('wheel', (e) => {
+                    e.evt.preventDefault();
+                    let fontSize = nameTextObj.fontSize();
+                    if (e.evt.deltaY < 0) {
+                        fontSize += 2;
+                    } else {
+                        fontSize -= 2;
+                    }
+                    fontSize = Math.max(8, Math.min(fontSize, 100));
+                    nameTextObj.fontSize(fontSize);
+                    nameTextObj.offsetX(nameTextObj.width() / 2);
+                    nameTextObj.offsetY(nameTextObj.height() / 2);
+                    layer.batchDraw();
+                });
+                
+                nameTextObj.on('mouseenter', function() {
+                    document.body.style.cursor = 'move';
+                    this.opacity(0.8);
+                    layer.draw();
+                });
+                
+                nameTextObj.on('mouseleave', function() {
+                    document.body.style.cursor = 'default';
+                    this.opacity(1);
+                    layer.draw();
+                });
+                
+                nameTextObj.on('dragstart', function() {
+                    this.opacity(0.6);
+                    layer.draw();
+                });
+                
+                nameTextObj.on('dragend', function() {
+                    this.opacity(1);
+                    layer.draw();
+                });
+                
+                nameTextObj.on('dblclick', function() {
+                    const newName = prompt('Edit name:', this.text());
+                    if (newName && newName.trim()) {
+                        this.text(newName.trim());
+                        this.offsetX(this.width() / 2);
+                        this.offsetY(this.height() / 2);
+                        layer.draw();
+                    }
+                });
+                
+                layer.add(nameTextObj);
+                canvasNameTexts.push(nameTextObj);
+            });
+            
+            layer.draw();
+        }
+    }, 100);
     
     // Re-initialize signature group after resize
     const { width, height } = getResponsiveSize();
@@ -329,6 +427,29 @@ function createCertificatePreview(sampleName = "John Doe") {
     previewText.offsetY(previewText.height() / 2);
     previewLayer.add(previewText);
 
+    // Add all canvas names with proper scaling
+    canvasNameTexts.forEach(canvasName => {
+        const previewCanvasText = new Konva.Text({
+            text: canvasName.text(),
+            x: canvasName.x() * scaleX,
+            y: canvasName.y() * scaleY,
+            fontSize: canvasName.fontSize() * scaleY,
+            fontFamily: canvasName.fontFamily(),
+            fontStyle: canvasName.fontStyle(),
+            fill: canvasName.fill(),
+            shadowColor: canvasName.shadowColor(),
+            shadowBlur: canvasName.shadowBlur() * scaleY,
+            shadowOffset: {
+                x: canvasName.shadowOffset().x * scaleX,
+                y: canvasName.shadowOffset().y * scaleY
+            },
+            shadowOpacity: canvasName.shadowOpacity(),
+        });
+        previewCanvasText.offsetX(previewCanvasText.width() / 2);
+        previewCanvasText.offsetY(previewCanvasText.height() / 2);
+        previewLayer.add(previewCanvasText);
+    });
+
     // Add signature image if available with proper scaling
     if (signImageObj && signImage.children.length > 0) {
         const signChild = signImage.children[0];
@@ -451,6 +572,8 @@ async function createCertificateWithName(speakerName) {
         return null;
     }
 
+    console.log("Creating certificate with canvas names:", canvasNameTexts.length);
+    
     const { width: containerWidth, height: containerHeight } = getResponsiveSize();
     
     // Create placement data structure similar to certificate-generator.js
@@ -491,6 +614,27 @@ async function createCertificateWithName(speakerName) {
         }
     };
 
+    // Add canvas names placement data
+    if (canvasNameTexts.length > 0) {
+        console.log("Adding canvas names to certificate generation:", canvasNameTexts.map(c => c.text()));
+        namePlacement.canvasNames = canvasNameTexts.map(canvasName => ({
+            text: canvasName.text(),
+            x: canvasName.x() * (actualImageWidth / containerWidth),
+            y: canvasName.y() * (actualImageHeight / containerHeight),
+            fontSize: canvasName.fontSize() * (actualImageHeight / containerHeight),
+            fontFamily: canvasName.fontFamily(),
+            fontStyle: canvasName.fontStyle(),
+            fill: canvasName.fill(),
+            shadowColor: canvasName.shadowColor(),
+            shadowBlur: canvasName.shadowBlur() * (actualImageHeight / containerHeight),
+            shadowOffset: {
+                x: canvasName.shadowOffset().x * (actualImageWidth / containerWidth),
+                y: canvasName.shadowOffset().y * (actualImageHeight / containerHeight)
+            },
+            shadowOpacity: canvasName.shadowOpacity()
+        }));
+    }
+
     // Add signature placement if available
     if (signImageObj && signImage.children.length > 0) {
         const signChild = signImage.children[0];
@@ -523,74 +667,83 @@ async function createCertificateWithName(speakerName) {
         }
     }
 
-    try {
-        // Reset opacity to ensure proper generation
-        if (nameText.opacity() !== 1) nameText.opacity(1);
-        if (signImage.opacity() !== 1) signImage.opacity(1);
-        
-        // Use the CertificateGenerator for consistent generation
-        const certificateUrl = bgImageObj.src;
-        return await CertificateGenerator.generateWithSignature({
-            certificateUrl: certificateUrl,
-            namePlacement: namePlacement,
-            participantName: speakerName,
-            signatureImage: signImageObj
-        });
-    } catch (error) {
-        console.error("Error using CertificateGenerator, falling back to manual generation:", error);
-        
-        // Fallback to manual generation
-        const canvas = document.createElement('canvas');
-        canvas.width = actualImageWidth;
-        canvas.height = actualImageHeight;
-        const ctx = canvas.getContext('2d');
-        
-        // Draw the background image
-        ctx.drawImage(bgImageObj, 0, 0, actualImageWidth, actualImageHeight);
-        
-        // Calculate proper scaling for text placement
-        const scaleX = actualImageWidth / containerWidth;
-        const scaleY = actualImageHeight / containerHeight;
-        
-        // Draw the speaker name
+    // Always use manual generation to ensure canvas names are included
+    console.log("Using manual certificate generation to ensure canvas names are included");
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = actualImageWidth;
+    canvas.height = actualImageHeight;
+    const ctx = canvas.getContext('2d');
+    
+    // Draw the background image
+    ctx.drawImage(bgImageObj, 0, 0, actualImageWidth, actualImageHeight);
+    
+    // Calculate proper scaling for text placement
+    const scaleX = actualImageWidth / containerWidth;
+    const scaleY = actualImageHeight / containerHeight;
+    
+    // Draw the speaker name (main name)
+    ctx.save();
+    ctx.font = `${nameText.fontStyle()} ${nameText.fontSize() * scaleY}px ${nameText.fontFamily()}`;
+    ctx.fillStyle = nameText.fill();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Add shadow if present
+    if (nameText.shadowColor()) {
+        ctx.shadowColor = nameText.shadowColor();
+        ctx.shadowBlur = nameText.shadowBlur() * scaleY;
+        ctx.shadowOffsetX = nameText.shadowOffset().x * scaleX;
+        ctx.shadowOffsetY = nameText.shadowOffset().y * scaleY;
+    }
+    
+    ctx.fillText(speakerName, nameText.x() * scaleX, nameText.y() * scaleY);
+    ctx.restore();
+    
+    // Draw all canvas names (admin added names) - THIS IS THE KEY PART
+    console.log("Drawing canvas names:", canvasNameTexts.length);
+    canvasNameTexts.forEach((canvasName, index) => {
+        console.log(`Drawing canvas name ${index + 1}: "${canvasName.text()}" at (${canvasName.x() * scaleX}, ${canvasName.y() * scaleY})`);
         ctx.save();
-        ctx.font = `${nameText.fontStyle()} ${nameText.fontSize() * scaleY}px ${nameText.fontFamily()}`;
-        ctx.fillStyle = nameText.fill();
+        ctx.font = `${canvasName.fontStyle()} ${canvasName.fontSize() * scaleY}px ${canvasName.fontFamily()}`;
+        ctx.fillStyle = canvasName.fill();
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
         // Add shadow if present
-        if (nameText.shadowColor()) {
-            ctx.shadowColor = nameText.shadowColor();
-            ctx.shadowBlur = nameText.shadowBlur();
-            ctx.shadowOffsetX = nameText.shadowOffset().x;
-            ctx.shadowOffsetY = nameText.shadowOffset().y;
+        if (canvasName.shadowColor()) {
+            ctx.shadowColor = canvasName.shadowColor();
+            ctx.shadowBlur = canvasName.shadowBlur() * scaleY;
+            ctx.shadowOffsetX = canvasName.shadowOffset().x * scaleX;
+            ctx.shadowOffsetY = canvasName.shadowOffset().y * scaleY;
         }
         
-        ctx.fillText(speakerName, nameText.x() * scaleX, nameText.y() * scaleY);
+        ctx.fillText(canvasName.text(), canvasName.x() * scaleX, canvasName.y() * scaleY);
         ctx.restore();
-        
-        // Draw signature if available with proper scaling
-        if (signImageObj && signImage.children.length > 0) {
-            const signChild = signImage.children[0];
-            if (signChild instanceof Konva.Image) {
-                const signX = signImage.x() * scaleX - (signChild.offsetX() * scaleX);
-                const signY = signImage.y() * scaleY - (signChild.offsetY() * scaleY);
-                const signWidth = signChild.width() * scaleX;
-                const signHeight = signChild.height() * scaleY;
-                
-                ctx.drawImage(
-                    signImageObj,
-                    signX,
-                    signY,
-                    signWidth,
-                    signHeight
-                );
-            }
+    });
+    
+    // Draw signature if available with proper scaling
+    if (signImageObj && signImage.children.length > 0) {
+        const signChild = signImage.children[0];
+        if (signChild instanceof Konva.Image) {
+            const signX = signImage.x() * scaleX - (signChild.offsetX() * scaleX);
+            const signY = signImage.y() * scaleY - (signChild.offsetY() * scaleY);
+            const signWidth = signChild.width() * scaleX;
+            const signHeight = signChild.height() * scaleY;
+            
+            ctx.drawImage(
+                signImageObj,
+                signX,
+                signY,
+                signWidth,
+                signHeight
+            );
         }
-        
-        return canvas.toDataURL('image/jpeg', 0.9);
     }
+    
+    const dataURL = canvas.toDataURL('image/jpeg', 0.9);
+    console.log("Certificate generation complete");
+    return dataURL;
 }
 
 async function downloadAllCertificates() {
@@ -862,4 +1015,231 @@ window.clearCanvasNames = function() {
     });
     canvasNameTexts = [];
     layer.draw();
+};
+
+// Enhanced preview function that includes all canvas names
+window.showPreview = function() {
+    if (!bgImageObj) {
+        alert("Please upload a certificate template first.");
+        return;
+    }
+
+    const previewModal = document.getElementById('previewModal');
+    const previewContainer = document.getElementById('previewContainer');
+
+    // Clear previous preview
+    previewContainer.innerHTML = '';
+
+    // Make the container responsive
+    previewContainer.style.width = '90vw';
+    previewContainer.style.height = '60vh';
+    previewContainer.style.display = 'flex';
+    previewContainer.style.alignItems = 'center';
+    previewContainer.style.justifyContent = 'center';
+
+    // Create preview stage with proper scaling
+    const containerWidth = previewContainer.offsetWidth;
+    const containerHeight = previewContainer.offsetHeight;
+    
+    const scale = Math.min(
+        containerWidth / actualImageWidth,
+        containerHeight / actualImageHeight
+    );
+    const displayWidth = actualImageWidth * scale;
+    const displayHeight = actualImageHeight * scale;
+
+    const previewStage = new Konva.Stage({
+        container: 'previewContainer',
+        width: displayWidth,
+        height: displayHeight,
+    });
+
+    const previewLayer = new Konva.Layer();
+    previewStage.add(previewLayer);
+
+    // Add background image
+    const previewBg = new Konva.Image({
+        image: bgImageObj,
+        width: displayWidth,
+        height: displayHeight
+    });
+    previewLayer.add(previewBg);
+
+    // Calculate scaling factors
+    const { width: editorWidth, height: editorHeight } = getResponsiveSize();
+    const scaleX = displayWidth / editorWidth;
+    const scaleY = displayHeight / editorHeight;
+
+    // Add the main sample name if it exists
+    if (nameText) {
+        const previewText = new Konva.Text({
+            text: nameText.text(),
+            x: nameText.x() * scaleX,
+            y: nameText.y() * scaleY,
+            fontSize: nameText.fontSize() * scaleY,
+            fontFamily: nameText.fontFamily(),
+            fontStyle: nameText.fontStyle(),
+            fill: nameText.fill(),
+            shadowColor: nameText.shadowColor(),
+            shadowBlur: nameText.shadowBlur() * scaleY,
+            shadowOffset: {
+                x: nameText.shadowOffset().x * scaleX,
+                y: nameText.shadowOffset().y * scaleY
+            },
+            shadowOpacity: nameText.shadowOpacity(),
+        });
+        previewText.offsetX(previewText.width() / 2);
+        previewText.offsetY(previewText.height() / 2);
+        previewLayer.add(previewText);
+    }
+
+    // Add all canvas names
+    canvasNameTexts.forEach(canvasName => {
+        const previewCanvasText = new Konva.Text({
+            text: canvasName.text(),
+            x: canvasName.x() * scaleX,
+            y: canvasName.y() * scaleY,
+            fontSize: canvasName.fontSize() * scaleY,
+            fontFamily: canvasName.fontFamily(),
+            fontStyle: canvasName.fontStyle(),
+            fill: canvasName.fill(),
+            shadowColor: canvasName.shadowColor(),
+            shadowBlur: canvasName.shadowBlur() * scaleY,
+            shadowOffset: {
+                x: canvasName.shadowOffset().x * scaleX,
+                y: canvasName.shadowOffset().y * scaleY
+            },
+            shadowOpacity: canvasName.shadowOpacity(),
+        });
+        previewCanvasText.offsetX(previewCanvasText.width() / 2);
+        previewCanvasText.offsetY(previewCanvasText.height() / 2);
+        previewLayer.add(previewCanvasText);
+    });
+
+    // Add signature image if available
+    if (signImageObj && signImage.children.length > 0) {
+        const signChild = signImage.children[0];
+        if (signChild instanceof Konva.Image) {
+            const previewSignature = new Konva.Image({
+                image: signImageObj,
+                x: signImage.x() * scaleX,
+                y: signImage.y() * scaleY,
+                width: signChild.width() * scaleX,
+                height: signChild.height() * scaleY,
+            });
+            previewSignature.offsetX(previewSignature.width() / 2);
+            previewSignature.offsetY(previewSignature.height() / 2);
+            previewLayer.add(previewSignature);
+        }
+    }
+
+    previewLayer.draw();
+
+    // Store the preview stage globally for download
+    window.currentPreviewStage = previewStage;
+
+    // Show the modal
+    previewModal.classList.remove('hidden');
+};
+
+// Enhanced download function that includes all canvas names
+window.downloadPreviewCertificate = function() {
+    // If preview stage exists, use it
+    if (window.currentPreviewStage) {
+        const dataURL = window.currentPreviewStage.toDataURL({
+            mimeType: "image/jpeg", 
+            quality: 0.9,
+            pixelRatio: 2
+        });
+        
+        const downloadLink = document.createElement('a');
+        downloadLink.href = dataURL;
+        downloadLink.download = 'certificate-preview.jpg';
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        return;
+    }
+
+    // If no preview stage, generate certificate directly
+    if (!bgImageObj) {
+        alert("Please upload a certificate template first.");
+        return;
+    }
+
+    // Create a temporary canvas for download
+    const canvas = document.createElement('canvas');
+    canvas.width = actualImageWidth;
+    canvas.height = actualImageHeight;
+    const ctx = canvas.getContext('2d');
+    
+    // Draw the background image
+    ctx.drawImage(bgImageObj, 0, 0, actualImageWidth, actualImageHeight);
+    
+    // Calculate scaling factors
+    const { width: editorWidth, height: editorHeight } = getResponsiveSize();
+    const scaleX = actualImageWidth / editorWidth;
+    const scaleY = actualImageHeight / editorHeight;
+    
+    // Draw the main sample name if it exists
+    if (nameText) {
+        ctx.save();
+        ctx.font = `${nameText.fontStyle()} ${nameText.fontSize() * scaleY}px ${nameText.fontFamily()}`;
+        ctx.fillStyle = nameText.fill();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Add shadow if present
+        if (nameText.shadowColor()) {
+            ctx.shadowColor = nameText.shadowColor();
+            ctx.shadowBlur = nameText.shadowBlur() * scaleY;
+            ctx.shadowOffsetX = nameText.shadowOffset().x * scaleX;
+            ctx.shadowOffsetY = nameText.shadowOffset().y * scaleY;
+        }
+        
+        ctx.fillText(nameText.text(), nameText.x() * scaleX, nameText.y() * scaleY);
+        ctx.restore();
+    }
+    
+    // Draw all canvas names
+    canvasNameTexts.forEach(canvasName => {
+        ctx.save();
+        ctx.font = `${canvasName.fontStyle()} ${canvasName.fontSize() * scaleY}px ${canvasName.fontFamily()}`;
+        ctx.fillStyle = canvasName.fill();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Add shadow if present
+        if (canvasName.shadowColor()) {
+            ctx.shadowColor = canvasName.shadowColor();
+            ctx.shadowBlur = canvasName.shadowBlur() * scaleY;
+            ctx.shadowOffsetX = canvasName.shadowOffset().x * scaleX;
+            ctx.shadowOffsetY = canvasName.shadowOffset().y * scaleY;
+        }
+        
+        ctx.fillText(canvasName.text(), canvasName.x() * scaleX, canvasName.y() * scaleY);
+        ctx.restore();
+    });
+    
+    // Draw signature if available
+    if (signImageObj && signImage.children.length > 0) {
+        const signChild = signImage.children[0];
+        if (signChild instanceof Konva.Image) {
+            const signX = signImage.x() * scaleX - (signChild.offsetX() * scaleX);
+            const signY = signImage.y() * scaleY - (signChild.offsetY() * scaleY);
+            const signWidth = signChild.width() * scaleX;
+            const signHeight = signChild.height() * scaleY;
+            
+            ctx.drawImage(signImageObj, signX, signY, signWidth, signHeight);
+        }
+    }
+    
+    // Download the generated certificate
+    const dataURL = canvas.toDataURL('image/jpeg', 0.9);
+    const downloadLink = document.createElement('a');
+    downloadLink.href = dataURL;
+    downloadLink.download = 'certificate-sample.jpg';
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
 };
