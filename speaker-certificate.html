@@ -60,7 +60,10 @@
             <!-- Certificate Upload -->
             <div class="flex flex-col items-center gap-4">
               <label class="block font-bold text-lg text-white whitespace-nowrap">Upload Certificate</label>
-              <button id="uploadBtn" class="border border-[#3be382] rounded-full px-6 md:px-10 py-2 text-white font-semibold bg-transparent hover:bg-[#1a1a1a] transition">Upload</button>
+              <div class="flex gap-2">
+                <button id="uploadBtn" class="border border-[#3be382] rounded-full px-6 md:px-8 py-2 text-white font-semibold bg-transparent hover:bg-[#1a1a1a] transition">Upload</button>
+                <button id="addNamesBtn" class="border border-[#3be382] rounded-full px-6 md:px-8 py-2 text-white font-semibold bg-transparent hover:bg-[#1a1a1a] transition">Add Names</button>
+              </div>
               <input type="file" id="templateUpload" accept="image/png, image/jpeg" class="hidden"/>
               <span id="fileName" class="text-white text-sm ml-2"></span>
             </div>
@@ -149,6 +152,40 @@
     </div>
   </div>
 
+  <!-- Add Names to Canvas Modal -->
+  <div id="addNamesModal" class="fixed inset-0 bg-black bg-opacity-60 z-50 hidden">
+    <div class="flex items-center justify-center min-h-screen p-4">
+      <div class="bg-white rounded-xl p-8 flex flex-col items-center max-w-md w-full mx-4">
+        <h3 class="text-2xl font-bold mb-6 text-center">Add Names to Canvas</h3>
+        <div class="w-full mb-4">
+          <div class="flex gap-2 mb-4">
+            <input type="text" id="canvasNameInput" placeholder="Enter name" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button id="addCanvasNameBtn" class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition">Add</button>
+          </div>
+          <div id="canvasNamesList" class="max-h-40 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50">
+            <div id="canvasNamesContainer" class="space-y-2">
+              <!-- Names will be added here -->
+            </div>
+            <div id="emptyCanvasNamesMessage" class="text-gray-500 text-center py-4">
+              No names added yet. Add names above.
+            </div>
+          </div>
+        </div>
+        <div class="flex gap-4">
+          <button id="applyCanvasNamesBtn" class="px-8 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition font-semibold">
+            Apply to Canvas
+          </button>
+          <button id="clearCanvasNamesBtn" class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition">
+            Clear All
+          </button>
+          <button id="closeAddNamesModalBtn" class="px-8 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     const uploadBtn = document.getElementById('uploadBtn');
     const templateUpload = document.getElementById('templateUpload');
@@ -181,6 +218,115 @@
       signatureUpload.onchange = () => {
         signatureFileName.textContent = signatureUpload.files.length ? signatureUpload.files[0].name : 'No File Chosen';
       };
+    }
+
+    // Add Names to Canvas functionality
+    const addNamesBtn = document.getElementById('addNamesBtn');
+    const addNamesModal = document.getElementById('addNamesModal');
+    const canvasNameInput = document.getElementById('canvasNameInput');
+    const addCanvasNameBtn = document.getElementById('addCanvasNameBtn');
+    const canvasNamesContainer = document.getElementById('canvasNamesContainer');
+    const emptyCanvasNamesMessage = document.getElementById('emptyCanvasNamesMessage');
+    const applyCanvasNamesBtn = document.getElementById('applyCanvasNamesBtn');
+    const clearCanvasNamesBtn = document.getElementById('clearCanvasNamesBtn');
+    const closeAddNamesModalBtn = document.getElementById('closeAddNamesModalBtn');
+
+    let canvasNames = [];
+
+    // Open Add Names modal
+    if (addNamesBtn) {
+      addNamesBtn.addEventListener('click', function() {
+        addNamesModal.classList.remove('hidden');
+      });
+    }
+
+    // Add name to canvas list
+    function addCanvasName(name) {
+      if (name.trim() && !canvasNames.includes(name.trim())) {
+        canvasNames.push(name.trim());
+        updateCanvasNamesDisplay();
+        canvasNameInput.value = '';
+      }
+    }
+
+    // Remove name from canvas list
+    window.removeCanvasName = function(name) {
+      const index = canvasNames.indexOf(name);
+      if (index > -1) {
+        canvasNames.splice(index, 1);
+        updateCanvasNamesDisplay();
+      }
+    }
+
+    // Update canvas names display
+    function updateCanvasNamesDisplay() {
+      if (canvasNames.length === 0) {
+        canvasNamesContainer.innerHTML = '';
+        emptyCanvasNamesMessage.style.display = 'block';
+      } else {
+        emptyCanvasNamesMessage.style.display = 'none';
+        canvasNamesContainer.innerHTML = canvasNames.map(name => `
+          <div class="flex items-center justify-between bg-white p-2 rounded-lg border border-gray-200">
+            <span class="font-medium">${name}</span>
+            <button onclick="removeCanvasName('${name}')" class="text-red-500 hover:text-red-700 font-bold text-lg">×</button>
+          </div>
+        `).join('');
+      }
+    }
+
+    // Add canvas name button
+    if (addCanvasNameBtn) {
+      addCanvasNameBtn.addEventListener('click', function() {
+        addCanvasName(canvasNameInput.value);
+      });
+    }
+
+    // Add name on Enter key
+    if (canvasNameInput) {
+      canvasNameInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+          addCanvasName(canvasNameInput.value);
+        }
+      });
+    }
+
+    // Apply names to canvas
+    if (applyCanvasNamesBtn) {
+      applyCanvasNamesBtn.addEventListener('click', function() {
+        // Call function to add names to the Konva canvas
+        if (typeof window.addNamesToCanvas === 'function') {
+          window.addNamesToCanvas(canvasNames);
+        }
+        addNamesModal.classList.add('hidden');
+      });
+    }
+
+    // Clear canvas names
+    if (clearCanvasNamesBtn) {
+      clearCanvasNamesBtn.addEventListener('click', function() {
+        if (typeof window.clearCanvasNames === 'function') {
+          window.clearCanvasNames();
+        }
+        // Also clear the modal list
+        canvasNames = [];
+        updateCanvasNamesDisplay();
+      });
+    }
+
+    // Close Add Names modal
+    if (closeAddNamesModalBtn) {
+      closeAddNamesModalBtn.addEventListener('click', function() {
+        addNamesModal.classList.add('hidden');
+      });
+    }
+
+    // Close modal when clicking outside
+    if (addNamesModal) {
+      addNamesModal.addEventListener('click', function(e) {
+        if (e.target === addNamesModal) {
+          addNamesModal.classList.add('hidden');
+        }
+      });
     }
 
     // Removed Firebase and event-related code for standalone functionality

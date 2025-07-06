@@ -744,3 +744,122 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
 });
+
+// Array to store all name text objects on canvas
+let canvasNameTexts = [];
+
+// Function to add names to canvas
+window.addNamesToCanvas = function(names) {
+    if (!stage || !layer) {
+        alert('Please upload a certificate template first.');
+        return;
+    }
+    
+    // Clear existing name texts (except the main sample name)
+    canvasNameTexts.forEach(nameTextObj => {
+        nameTextObj.destroy();
+    });
+    canvasNameTexts = [];
+    
+    const { width, height } = getResponsiveSize();
+    
+    // Calculate positions for multiple names
+    const startY = height * 0.3; // Start from 30% of canvas height
+    const nameSpacing = Math.max(50, height * 0.08); // Space between names
+    
+    names.forEach((name, index) => {
+        const nameTextObj = new Konva.Text({
+            text: name,
+            x: width / 2,
+            y: startY + (index * nameSpacing),
+            fontSize: Math.max(16, Math.floor(height / 20)),
+            fontFamily: 'Arial',
+            fill: 'black',
+            draggable: true,
+            fontStyle: 'bold',
+            shadowColor: 'white',
+            shadowBlur: 2,
+            shadowOffset: { x: 1, y: 1 },
+            shadowOpacity: 0.5,
+        });
+        
+        // Center the text
+        nameTextObj.offsetX(nameTextObj.width() / 2);
+        nameTextObj.offsetY(nameTextObj.height() / 2);
+        
+        // Add mouse wheel resize functionality
+        nameTextObj.on('wheel', (e) => {
+            e.evt.preventDefault();
+            let fontSize = nameTextObj.fontSize();
+            if (e.evt.deltaY < 0) {
+                fontSize += 2;
+            } else {
+                fontSize -= 2;
+            }
+            fontSize = Math.max(8, Math.min(fontSize, 100)); // Limit font size
+            nameTextObj.fontSize(fontSize);
+            nameTextObj.offsetX(nameTextObj.width() / 2);
+            nameTextObj.offsetY(nameTextObj.height() / 2);
+            layer.batchDraw();
+        });
+        
+        // Add hover effects
+        nameTextObj.on('mouseenter', function() {
+            document.body.style.cursor = 'move';
+            this.opacity(0.8);
+            layer.draw();
+        });
+        
+        nameTextObj.on('mouseleave', function() {
+            document.body.style.cursor = 'default';
+            this.opacity(1);
+            layer.draw();
+        });
+        
+        // Add drag feedback
+        nameTextObj.on('dragstart', function() {
+            this.opacity(0.6);
+            layer.draw();
+        });
+        
+        nameTextObj.on('dragend', function() {
+            this.opacity(1);
+            layer.draw();
+        });
+        
+        // Double-click to edit text
+        nameTextObj.on('dblclick', function() {
+            const newName = prompt('Edit name:', this.text());
+            if (newName && newName.trim()) {
+                this.text(newName.trim());
+                this.offsetX(this.width() / 2);
+                this.offsetY(this.height() / 2);
+                layer.draw();
+            }
+        });
+        
+        layer.add(nameTextObj);
+        canvasNameTexts.push(nameTextObj);
+    });
+    
+    layer.draw();
+    
+    // Update save status
+    const saveStatus = document.getElementById('saveStatus');
+    if (saveStatus) {
+        saveStatus.textContent = `Added ${names.length} name(s) to canvas`;
+        saveStatus.style.color = "#10b981";
+        setTimeout(() => {
+            saveStatus.textContent = "";
+        }, 3000);
+    }
+};
+
+// Function to clear all canvas names
+window.clearCanvasNames = function() {
+    canvasNameTexts.forEach(nameTextObj => {
+        nameTextObj.destroy();
+    });
+    canvasNameTexts = [];
+    layer.draw();
+};
