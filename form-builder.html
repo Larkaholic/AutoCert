@@ -232,7 +232,7 @@
         db.collection("events").doc(eventTitle).set(eventDetails, { merge: true })
         .then(() => {
             let feedbackUrl;
-            feedbackUrl = `./feedback-form-user.html?event=${encodeURIComponent(eventTitle)}`;
+            feedbackUrl = `./feedback-form-User.html?event=${encodeURIComponent(eventTitle)}`;
             
             // Check if any question is of type 'booth'
             const hasBoothQuestion = questions.some(q => q.type === 'booth');
