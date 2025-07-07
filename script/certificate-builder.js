@@ -39,7 +39,7 @@ function initKonva(imageSrc) {
             x: width / 2,
             y: height / 2,
             fontSize: Math.max(18, Math.floor(height / 16)),
-            fontFamily: 'Arial',
+            fontFamily: 'Poppins',
             fill: 'black',
             draggable: true,
             fontStyle: 'bold',
@@ -335,7 +335,7 @@ document.addEventListener('DOMContentLoaded', function() {
         x: width / 2,
         y: height / 2,
         fontSize: 18,
-        fontFamily: 'Arial',
+        fontFamily: 'Poppins',
         fill: 'white',
         align: 'center',
     });
@@ -364,7 +364,7 @@ document.addEventListener('DOMContentLoaded', function() {
         x: width / 2,
         y: height / 2,
         fontSize: 18,
-        fontFamily: 'Arial',
+        fontFamily: 'Poppins',
         fill: 'white',
         align: 'center',
     });
