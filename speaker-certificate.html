@@ -72,6 +72,18 @@
               <input type="file" id="templateUpload" accept="image/png, image/jpeg" class="hidden"/>
               <span id="fileName" class="text-white text-sm ml-2"></span>
             </div>
+            <!-- Font Selection -->
+            <div class="flex flex-col items-center gap-4">
+              <label class="block font-bold text-lg text-white whitespace-nowrap">Certificate Font</label>
+              <select id="speakerCertificateFontSelect" class="p-2 border border-gray-300 bg-[#232b2b] text-white rounded-xl shadow-lg">
+                <option value="Poppins" style="background-color: #232b2b;">Poppins</option>
+                <option value="Merriweather" style="background-color: #232b2b;">Merriweather</option>
+                <option value="Montserrat" style="background-color: #232b2b;">Montserrat</option>
+                <option value="Raleway" style="background-color: #232b2b;">Raleway</option>
+                <option value="Pinyon Script" style="background-color: #232b2b;">Pinyon Script</option>
+                <option value="Alex Brush" style="background-color: #232b2b;">Alex Brush</option>
+              </select>
+            </div>
             <!-- Signature Upload -->
             <div class="flex flex-col items-center gap-4">
               <label class="block font-bold text-lg text-white whitespace-nowrap">Upload Signature(s)</label>
@@ -409,8 +421,17 @@
 
     if (previewCertBtn) {
       previewCertBtn.addEventListener('click', function() {
-        // Use the existing preview function from speaker-certificate.js
-        if (typeof window.showPreview === 'function') {
+        // Use the speaker certificate preview function
+        if (typeof window.createSpeakerCertificatePreview === 'function') {
+          previewModal.classList.remove('hidden');
+          previewContainer.innerHTML = '';
+          previewContainer.style.width = '90vw';
+          previewContainer.style.height = '60vh';
+          previewContainer.style.display = 'flex';
+          previewContainer.style.alignItems = 'center';
+          previewContainer.style.justifyContent = 'center';
+          window.createSpeakerCertificatePreview();
+        } else if (typeof window.showPreview === 'function') {
           window.showPreview();
         } else {
           // Fallback to original preview if function not available
@@ -432,8 +453,10 @@
 
     if (downloadCertBtn) {
       downloadCertBtn.addEventListener('click', function() {
-        // Use the existing download function from speaker-certificate.js
-        if (typeof window.downloadPreviewCertificate === 'function') {
+        // Use the speaker certificate download function
+        if (typeof window.downloadSpeakerPreviewCertificate === 'function') {
+          window.downloadSpeakerPreviewCertificate();
+        } else if (typeof window.downloadPreviewCertificate === 'function') {
           window.downloadPreviewCertificate();
         } else {
           // Fallback to original download if function not available
@@ -471,5 +494,6 @@
     }
   </script>
   <script src="./script/speaker-certificate.js" type="module"></script>
+  <script src="./script/speaker-certificate-builder.js"></script>
 </body>
 </html>
