@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speaker Certificate Debug</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/konva@9.2.0/konva.min.js"></script>
+</head>
+<body class="bg-gray-100 p-4">
+    <div class="max-w-3xl mx-auto bg-white p-6 rounded-lg shadow-lg">
+        <h1 class="text-2xl font-bold mb-4">Speaker Certificate Debug Tool</h1>
+        
+        <div class="flex gap-4 mb-6">
+            <button id="testAddNames" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
+                Test Add Names
+            </button>
+            <button id="testClearNames" class="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600">
+                Test Clear Names
+            </button>
+        </div>
+        
+        <div id="konvaContainer" class="border border-gray-300 bg-gray-50 h-[400px] mb-4"></div>
+        
+        <div id="debugOutput" class="bg-gray-900 text-green-400 p-4 rounded font-mono text-sm h-[200px] overflow-y-auto">
+            Debug output will appear here...
+        </div>
+    </div>
+
+    <script>
+        // Debug logger
+        function log(message) {
+            const debugOutput = document.getElementById('debugOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            debugOutput.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            debugOutput.scrollTop = debugOutput.scrollHeight;
+            console.log(message);
+        }
+
+        // Initialize basic Konva stage
+        let stage, layer, nameText;
+        window.canvasNameTexts = [];
+
+        function initKonva() {
+            const container = document.getElementById('konvaContainer');
+            const width = container.offsetWidth;
+            const height = container.offsetHeight;
+            
+            stage = new Konva.Stage({
+                container: 'konvaContainer',
+                width: width,
+                height: height,
+            });
+            
+            layer = new Konva.Layer();
+            stage.add(layer);
+
+            // Add a sample main text
+            nameText = new Konva.Text({
+                text: 'MAIN NAME',
+                x: width / 2,
+                y: height / 2,
+                fontSize: 30,
+                fontFamily: 'Arial',
+                fill: 'black',
+                draggable: true,
+            });
+            nameText.offsetX(nameText.width() / 2);
+            nameText.offsetY(nameText.height() / 2);
+            
+            layer.add(nameText);
+            layer.draw();
+            
+            log('Konva initialized');
+        }
+
+        // Expose to window for debugging
+        window.stage = stage;
+        window.layer = layer;
+        window.nameText = nameText;
+
+        // Add names to canvas function - simplified version for testing
+        window.addNamesToCanvas = function(names) {
+            log(`addNamesToCanvas called with ${names.length} names: ${JSON.stringify(names)}`);
+            
+            if (!window.stage || !window.layer) {
+                log('ERROR: Stage or layer not initialized');
+                return;
+            }
+            
+            // Clear existing names
+            if (window.canvasNameTexts) {
+                window.canvasNameTexts.forEach(nameTextObj => {
+                    nameTextObj.destroy();
+                });
+            }
+            window.canvasNameTexts = [];
+            
+            const width = window.stage.width();
+            const height = window.stage.height();
+            
+            // Add names at different positions
+            names.forEach((name, index) => {
+                log(`Adding name: ${name}`);
+                const nameTextObj = new Konva.Text({
+                    text: name,
+                    x: width / 2,
+                    y: 100 + (index * 50),
+                    fontSize: 20,
+                    fontFamily: 'Arial',
+                    fill: 'black', // Changed from red to black for production
+                    draggable: true,
+                });
+                
+                nameTextObj.offsetX(nameTextObj.width() / 2);
+                nameTextObj.offsetY(nameTextObj.height() / 2);
+                
+                window.layer.add(nameTextObj);
+                window.canvasNameTexts.push(nameTextObj);
+            });
+            
+            window.layer.draw();
+            log(`Added ${names.length} names to canvas`);
+        };
+
+        // Clear canvas names function
+        window.clearCanvasNames = function() {
+            log('clearCanvasNames called');
+            
+            if (window.canvasNameTexts) {
+                window.canvasNameTexts.forEach(nameTextObj => {
+                    nameTextObj.destroy();
+                });
+            }
+            window.canvasNameTexts = [];
+            
+            if (window.layer) {
+                window.layer.draw();
+            }
+            
+            log('All names cleared from canvas');
+        };
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initKonva();
+            
+            // Test buttons
+            document.getElementById('testAddNames').addEventListener('click', function() {
+                log('Test Add Names button clicked');
+                const testNames = ['John Doe', 'Jane Smith', 'Alice Johnson'];
+                window.addNamesToCanvas(testNames);
+            });
+            
+            document.getElementById('testClearNames').addEventListener('click', function() {
+                log('Test Clear Names button clicked');
+                window.clearCanvasNames();
+            });
+        });
+    </script>
+</body>
+</html>

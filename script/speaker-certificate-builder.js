@@ -36,6 +36,7 @@ function initSpeakerKonva(imageSrc) {
         // Get the selected font
         const fontSelect = document.getElementById('speakerCertificateFontSelect');
         const selectedFont = fontSelect ? fontSelect.value : 'Poppins';
+        console.log(`Using font "${selectedFont}" for initial speaker name text`);
 
         speakerNameText = new Konva.Text({
             text: 'SPEAKER NAME',
@@ -52,20 +53,15 @@ function initSpeakerKonva(imageSrc) {
             shadowOpacity: 0.5,
         });
         
+        // Ensure the font change handler is set up
+        if (window.setupFontChangeHandler) {
+            window.setupFontChangeHandler();
+        }
+        
+        // Center text
         speakerNameText.offsetX(speakerNameText.width() / 2);
         speakerNameText.offsetY(speakerNameText.height() / 2);
-
-        speakerNameText.on('wheel', (e) => {
-            e.evt.preventDefault();
-            let fontSize = speakerNameText.fontSize();
-            if (e.evt.deltaY < 0) fontSize = Math.min(100, fontSize + 2);
-            else fontSize = Math.max(10, fontSize - 2);
-            speakerNameText.fontSize(fontSize);
-            speakerNameText.offsetX(speakerNameText.width() / 2);
-            speakerNameText.offsetY(speakerNameText.height() / 2);
-            speakerLayer.batchDraw();
-        });
-
+        
         speakerLayer.add(speakerNameText);
         speakerLayer.draw();
     };
@@ -74,7 +70,7 @@ function initSpeakerKonva(imageSrc) {
 
 function createSpeakerCertificatePreview(speakerName = "John Speaker") {
     if (!speakerNameText || !speakerBgImageObj) {
-        alert("Please upload a template and position the name first.");
+        alert("Please upload a template first.");
         return null;
     }
 
@@ -142,87 +138,134 @@ function createSpeakerCertificatePreview(speakerName = "John Speaker") {
 
 // Event listeners for speaker certificate
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('speaker-certificate-builder.js loaded');
     const speakerTemplateUpload = document.getElementById('templateUpload');
     const speakerPreviewBtn = document.getElementById('previewCertBtn');
     const speakerDownloadBtn = document.getElementById('downloadCertBtn');
-    const fontSelect = document.getElementById('speakerCertificateFontSelect');
     
-    // Font change handler
-    if (fontSelect) {
-        fontSelect.addEventListener('change', function() {
-            const selectedFont = fontSelect.value;
+    // Set up font change handler function that we'll use multiple times
+    function setupFontChangeHandler() {
+        console.log('Setting up font change handler');
+        const fontSelect = document.getElementById('speakerCertificateFontSelect');
+        
+        if (!fontSelect) {
+            console.warn('Font select element not found!');
+            // Try again in a moment if element not found
+            setTimeout(setupFontChangeHandler, 500);
+            return;
+        }
+        
+        console.log('Font select element found:', fontSelect);
+        
+        // Remove any existing event listeners to prevent duplicates
+        const newFontSelect = fontSelect.cloneNode(true);
+        fontSelect.parentNode.replaceChild(newFontSelect, fontSelect);
+        
+        // Add the change event listener
+        newFontSelect.addEventListener('change', function() {
+            const selectedFont = this.value;
+            console.log(`Font selection changed to: "${selectedFont}"`);
             
-            // Set the default font for new text objects
-            window.speakerDefaultFont = selectedFont;
-            
-            // Only update the main sample name text from speaker-certificate.js
+            // Update the main nameText from speaker-certificate.js
             if (window.nameText) {
+                // Store the current text
+                const currentText = window.nameText.text();
+                
+                // Update the font
                 window.nameText.fontFamily(selectedFont);
+                
+                // Recenter the text since font change affects width
                 window.nameText.offsetX(window.nameText.width() / 2);
                 window.nameText.offsetY(window.nameText.height() / 2);
                 
-                if (window.layer) {
-                    window.layer.draw();
-                }
+                // Draw the updated text
+                window.layer.draw();
+                console.log(`Font changed to "${selectedFont}" for main sample name: "${currentText}"`);
+            } else {
+                console.log('window.nameText not available');
             }
             
-            // Do NOT update canvasNameTexts - let users manually change those if needed
-            // This preserves the fonts of names that were added to canvas
+            // Also update the local speakerNameText if it exists
+            if (speakerNameText) {
+                speakerNameText.fontFamily(selectedFont);
+                
+                // Recenter the text
+                speakerNameText.offsetX(speakerNameText.width() / 2);
+                speakerNameText.offsetY(speakerNameText.height() / 2);
+                
+                speakerLayer.draw();
+                console.log(`Font also updated in speakerNameText: "${speakerNameText.text()}"`);
+            }
+            
+            // Debug fonts
+            if (window.debugFonts) {
+                window.debugFonts();
+            }
         });
+        
+        // Add focus/blur events for better mobile experience
+        newFontSelect.addEventListener('focus', function() {
+            console.log('Font select focused');
+        });
+        
+        newFontSelect.addEventListener('blur', function() {
+            console.log('Font select blurred, value:', this.value);
+            // Trigger change event if needed on mobile
+            const event = new Event('change');
+            this.dispatchEvent(event);
+        });
+        
+        console.log('Font change handler set up successfully');
     }
     
-    if (speakerTemplateUpload) {
-        speakerTemplateUpload.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                if (speakerStage) speakerStage.destroy();
-                initSpeakerKonva(evt.target.result);
-            };
-            reader.readAsDataURL(file);
-        });
-    }
+    // Set up the font handler immediately
+    setupFontChangeHandler();
+    
+    // Also set it up after a delay to ensure DOM is fully loaded
+    setTimeout(setupFontChangeHandler, 1000);
+    
+    // And also attach it to the window for any template loading scenarios
+    window.setupFontChangeHandler = setupFontChangeHandler;
     
     if (speakerPreviewBtn) {
         speakerPreviewBtn.addEventListener('click', function() {
-            if (!speakerNameText || !speakerBgImageObj) {
-                alert("Please upload a template and position the name first.");
+            console.log("Preview button clicked");
+            
+            // Check if we have a template loaded
+            if (!window.bgImageObj && !speakerBgImageObj) {
+                alert("Please upload a template first.");
                 return;
             }
-
+            
             const previewModal = document.getElementById('previewModal');
             const previewContainer = document.getElementById('previewContainer');
 
+            // Clear previous preview
             previewContainer.innerHTML = '';
-            previewContainer.style.width = '90vw';
-            previewContainer.style.height = '60vh';
+
+            // Make the container wide and not too tall for a landscape certificate
+            previewContainer.style.width = '90vw';      // Use 90% of viewport width
+            previewContainer.style.height = '60vh';     // Use 60% of viewport height
             previewContainer.style.display = 'flex';
             previewContainer.style.alignItems = 'center';
             previewContainer.style.justifyContent = 'center';
 
-            createSpeakerCertificatePreview();
-            previewModal.classList.remove('hidden');
+            // Use window.createSpeakerCertificatePreview which has been enhanced to work with both systems
+            const previewResult = window.createSpeakerCertificatePreview();
+            
+            // Only show modal if preview was successful
+            if (previewResult) {
+                previewModal.classList.remove('hidden');
+            }
         });
     }
     
     if (speakerDownloadBtn) {
         speakerDownloadBtn.addEventListener('click', function() {
-            const previewStage = window.createSpeakerCertificatePreview("John Speaker");
-            if (!previewStage) return;
+            console.log("Download button clicked");
             
-            const dataURL = previewStage.toDataURL({
-                mimeType: "image/jpeg", 
-                quality: 0.9,
-                pixelRatio: 2
-            });
-            
-            const downloadLink = document.createElement('a');
-            downloadLink.href = dataURL;
-            downloadLink.download = 'sample-speaker-certificate.jpg';
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            document.body.removeChild(downloadLink);
+            // Use the enhanced download function that handles both systems
+            window.downloadSpeakerPreviewCertificate();
         });
     }
 });
@@ -231,46 +274,23 @@ document.addEventListener('DOMContentLoaded', function() {
 window.createSpeakerCertificatePreview = createSpeakerCertificatePreview;
 window.initSpeakerKonva = initSpeakerKonva;
 
-// Font change handler for speaker certificates - integrates with existing system
-document.addEventListener('DOMContentLoaded', function() {
-    const fontSelect = document.getElementById('speakerCertificateFontSelect');
-    
-    // Font change handler with null check
-    if (fontSelect) {
-        fontSelect.addEventListener('change', function() {
-            const selectedFont = fontSelect.value;
-            
-            // Set the default font for new text objects
-            window.speakerDefaultFont = selectedFont;
-            
-            // Only update the main sample name text from speaker-certificate.js
-            if (window.nameText) {
-                window.nameText.fontFamily(selectedFont);
-                window.nameText.offsetX(window.nameText.width() / 2);
-                window.nameText.offsetY(window.nameText.height() / 2);
-                
-                if (window.layer) {
-                    window.layer.draw();
-                }
-            }
-            
-            // Do NOT update canvasNameTexts - let users manually change those if needed
-            // This preserves the fonts of names that were added to canvas
-        });
-    }
-});
-
 // Override the preview function to work with existing system and use selected font
 window.createSpeakerCertificatePreview = function(sampleName = "John Speaker") {
-    // Check if we have the necessary components from speaker-certificate.js
-    if (!window.stage || !window.bgImageObj) {
+    // Check if we have the necessary components from either speaker-certificate.js or local variables
+    console.log("Checking for template availability");
+    console.log("window.stage:", !!window.stage, "window.bgImageObj:", !!window.bgImageObj);
+    console.log("speakerBgImageObj:", !!speakerBgImageObj);
+    
+    // Use either global or local image object
+    const hasTemplate = !!(window.bgImageObj || speakerBgImageObj);
+    
+    if (!hasTemplate) {
         alert("Please upload a template first.");
         return null;
     }
 
     const previewContainer = document.getElementById('previewContainer');
     if (!previewContainer) {
-        console.error('Preview container not found');
         return null;
     }
 
@@ -280,14 +300,26 @@ window.createSpeakerCertificatePreview = function(sampleName = "John Speaker") {
     const containerWidth = previewContainer.offsetWidth;
     const containerHeight = previewContainer.offsetHeight;
 
-    // Get the actual image dimensions from speaker-certificate.js
-    const imageWidth = window.actualImageWidth || window.bgImageObj.width;
-    const imageHeight = window.actualImageHeight || window.bgImageObj.height;
+    // Use either global or local image object and dimensions
+    const templateImage = window.bgImageObj || speakerBgImageObj;
+    if (!templateImage) {
+        console.error("No template image found!");
+        alert("Please upload a template first.");
+        return null;
+    }
+    
+    const imageWidth = window.actualImageWidth || speakerActualImageWidth || templateImage.width;
+    const imageHeight = window.actualImageHeight || speakerActualImageHeight || templateImage.height;
+    
+    console.log("Template dimensions:", imageWidth, "x", imageHeight);
+    console.log("Container dimensions:", containerWidth, "x", containerHeight);
 
     // Calculate scale to fit image into container while maintaining aspect ratio
     const scale = Math.min(containerWidth / imageWidth, containerHeight / imageHeight);
     const displayWidth = imageWidth * scale;
     const displayHeight = imageHeight * scale;
+    
+    console.log("Display dimensions:", displayWidth, "x", displayHeight, "Scale:", scale);
 
     // Create preview stage
     const previewStage = new Konva.Stage({
@@ -301,81 +333,106 @@ window.createSpeakerCertificatePreview = function(sampleName = "John Speaker") {
 
     // Add background image
     const previewBg = new Konva.Image({
-        image: window.bgImageObj,
+        image: templateImage,
         width: displayWidth,
         height: displayHeight
     });
+    console.log("Added background image to preview");
     previewLayer.add(previewBg);
 
-    // Get the current stage dimensions for scaling
-    const stageWidth = window.stage.width();
-    const stageHeight = window.stage.height();
+    // Get the current stage dimensions for scaling, accounting for both systems
+    const stageWidth = window.stage ? window.stage.width() : (speakerStage ? speakerStage.width() : containerWidth);
+    const stageHeight = window.stage ? window.stage.height() : (speakerStage ? speakerStage.height() : containerHeight);
     const scaleX = displayWidth / stageWidth;
     const scaleY = displayHeight / stageHeight;
+    
+    console.log("Stage dimensions:", stageWidth, "x", stageHeight);
+    console.log("Scale factors:", scaleX, scaleY);
 
     // Get selected font for main text only
     const fontSelect = document.getElementById('speakerCertificateFontSelect');
     const selectedFont = fontSelect ? fontSelect.value : 'Poppins';
 
-    // Clone main sample text with selected font
-    if (window.nameText) {
-        const clonedMainText = new Konva.Text({
-            text: sampleName,
-            x: window.nameText.x() * scaleX,
-            y: window.nameText.y() * scaleY,
-            fontSize: window.nameText.fontSize() * ((scaleX + scaleY) / 2),
-            fontFamily: selectedFont, // Use selected font for main text only
-            fontStyle: window.nameText.fontStyle(),
-            fill: window.nameText.fill(),
-            shadowColor: window.nameText.shadowColor(),
-            shadowBlur: window.nameText.shadowBlur(),
-            shadowOffset: window.nameText.shadowOffset(),
-            shadowOpacity: window.nameText.shadowOpacity(),
-        });
+    // Clone main sample text with selected font - use either global or local nameText
+    const textSource = window.nameText || speakerNameText;
+    
+    if (textSource) {
+        // Get selected font for main text
+        const fontSelect = document.getElementById('speakerCertificateFontSelect');
+        const selectedFont = fontSelect ? fontSelect.value : textSource.fontFamily();
+        console.log(`Using font "${selectedFont}" for preview text`);
         
-        clonedMainText.offsetX(clonedMainText.width() / 2);
-        clonedMainText.offsetY(clonedMainText.height() / 2);
-        previewLayer.add(clonedMainText);
+        const previewText = new Konva.Text({
+            text: sampleName,
+            x: textSource.x() * scaleX,
+            y: textSource.y() * scaleY,
+            fontSize: textSource.fontSize() * scaleY,
+            fontFamily: selectedFont,  // Use the selected font
+            fontStyle: textSource.fontStyle(),
+            fill: textSource.fill(),
+            shadowColor: textSource.shadowColor(),
+            shadowBlur: textSource.shadowBlur() * scaleY,
+            shadowOffset: {
+                x: textSource.shadowOffset().x * scaleX,
+                y: textSource.shadowOffset().y * scaleY
+            },
+            shadowOpacity: textSource.shadowOpacity(),
+        });
+
+        previewText.offsetX(previewText.width() / 2);
+        previewText.offsetY(previewText.height() / 2);
+        previewLayer.add(previewText);
     }
 
     // Clone canvas names with their original fonts (preserve their individual fonts)
     if (window.canvasNameTexts) {
-        window.canvasNameTexts.forEach(textObj => {
-            const clonedText = new Konva.Text({
-                text: textObj.text(),
-                x: textObj.x() * scaleX,
-                y: textObj.y() * scaleY,
-                fontSize: textObj.fontSize() * ((scaleX + scaleY) / 2),
-                fontFamily: textObj.fontFamily(), // Keep original font for canvas names
-                fontStyle: textObj.fontStyle(),
-                fill: textObj.fill(),
-                shadowColor: textObj.shadowColor(),
-                shadowBlur: textObj.shadowBlur(),
-                shadowOffset: textObj.shadowOffset(),
-                shadowOpacity: textObj.shadowOpacity(),
-            });
+        console.log(`Adding ${window.canvasNameTexts.length} canvas names to preview`);
+        window.canvasNameTexts.forEach((canvasName, i) => {
+            // Always use the original font for additional names - do not apply the selected font
+            const originalFont = canvasName.fontFamily();
+            console.log(`Canvas name ${i}: "${canvasName.text()}" using font "${originalFont}"`);
             
-            clonedText.offsetX(clonedText.width() / 2);
-            clonedText.offsetY(clonedText.height() / 2);
-            previewLayer.add(clonedText);
+            const previewName = new Konva.Text({
+                text: canvasName.text(),
+                x: canvasName.x() * scaleX,
+                y: canvasName.y() * scaleY,
+                fontSize: canvasName.fontSize() * scaleY,
+                fontFamily: originalFont,  // Use original font
+                fontStyle: canvasName.fontStyle(),
+                fill: canvasName.fill(),
+                shadowColor: canvasName.shadowColor(),
+                shadowBlur: canvasName.shadowBlur() * scaleY,
+                shadowOffset: {
+                    x: canvasName.shadowOffset().x * scaleX,
+                    y: canvasName.shadowOffset().y * scaleY
+                },
+                shadowOpacity: canvasName.shadowOpacity(),
+            });
+
+            previewName.offsetX(previewName.width() / 2);
+            previewName.offsetY(previewName.height() / 2);
+            previewLayer.add(previewName);
         });
     }
 
     // Clone all signature images from the main stage
     if (window.canvasSignatures) {
         window.canvasSignatures.forEach(sig => {
-            const signChild = sig.group.children[0];
-            if (signChild && signChild.className === 'Image') {
-                const clonedImage = new Konva.Image({
-                    image: sig.image,
-                    x: sig.group.x() * scaleX,
-                    y: sig.group.y() * scaleY,
-                    width: signChild.width() * scaleX,
-                    height: signChild.height() * scaleY,
-                    offsetX: signChild.offsetX() * scaleX,
-                    offsetY: signChild.offsetY() * scaleY,
+            const group = sig.group;
+            const image = sig.image;
+            
+            if (image && group) {
+                const sigImage = new Konva.Image({
+                    image: image,
+                    x: group.x() * scaleX,
+                    y: group.y() * scaleY,
+                    width: group.children[0].width() * scaleX,
+                    height: group.children[0].height() * scaleY,
+                    offsetX: group.children[0].offsetX(),
+                    offsetY: group.children[0].offsetY()
                 });
-                previewLayer.add(clonedImage);
+                
+                previewLayer.add(sigImage);
             }
         });
     }
@@ -386,93 +443,171 @@ window.createSpeakerCertificatePreview = function(sampleName = "John Speaker") {
 
 // Override the download function to use selected font for main text only
 window.downloadSpeakerPreviewCertificate = function() {
+    console.log("Downloading preview certificate");
+    
+    // Check if we have a template loaded
+    if (!window.bgImageObj && !speakerBgImageObj) {
+        alert("Please upload a template first.");
+        return;
+    }
+    
     const previewStage = window.createSpeakerCertificatePreview("Sample Speaker");
-    if (!previewStage) return;
+    if (!previewStage) {
+        console.error("Failed to create preview stage");
+        return;
+    }
     
-    const dataURL = previewStage.toDataURL({
-        mimeType: "image/jpeg", 
-        quality: 0.9,
-        pixelRatio: 2
-    });
-    
-    const downloadLink = document.createElement('a');
-    downloadLink.href = dataURL;
-    downloadLink.download = 'sample-speaker-certificate.jpg';
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
+    try {
+        const dataURL = previewStage.toDataURL({
+            mimeType: "image/jpeg", 
+            quality: 0.9,
+            pixelRatio: 2
+        });
+        
+        const downloadLink = document.createElement('a');
+        downloadLink.href = dataURL;
+        downloadLink.download = 'sample-speaker-certificate.jpg';
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        console.log("Certificate download complete");
+    } catch (error) {
+        console.error("Error generating certificate:", error);
+        alert("There was an error generating the certificate. Please try again.");
+    }
 };
 
-// Hook into the existing addNamesToCanvas function to apply font to new names only
-setTimeout(() => {
-    if (window.addNamesToCanvas) {
-        const originalAddNamesToCanvas = window.addNamesToCanvas;
-        window.addNamesToCanvas = function(names) {
-            // Set the default font for new names
-            const fontSelect = document.getElementById('speakerCertificateFontSelect');
-            if (fontSelect) {
-                window.speakerDefaultFont = fontSelect.value;
-            }
-            
-            // Call the original function
-            originalAddNamesToCanvas(names);
-            
-            // Update font of newly added text objects only
-            setTimeout(() => {
-                if (window.canvasNameTexts && window.canvasNameTexts.length > 0) {
-                    // Only update the font of newly added names (last few in the array)
-                    const newNamesCount = names.length;
-                    const startIndex = Math.max(0, window.canvasNameTexts.length - newNamesCount);
-                    
-                    for (let i = startIndex; i < window.canvasNameTexts.length; i++) {
-                        const textObj = window.canvasNameTexts[i];
-                        if (textObj && window.speakerDefaultFont) {
-                            textObj.fontFamily(window.speakerDefaultFont);
-                            textObj.offsetX(textObj.width() / 2);
-                            textObj.offsetY(textObj.height() / 2);
-                        }
-                    }
-                    
-                    if (window.layer) {
-                        window.layer.draw();
-                    }
-                }
-            }, 100);
-        };
+// Initialize default font
+window.speakerDefaultFont = 'Poppins';
+
+// Add font debugging functions
+window.debugFonts = function() {
+    console.log('--- Font Debug Information ---');
+    
+    // Check the dropdown selection
+    const fontSelect = document.getElementById('speakerCertificateFontSelect');
+    console.log(`Font dropdown selected value: "${fontSelect ? fontSelect.value : 'not found'}"`);
+    
+    // Check main sample name font
+    if (window.nameText) {
+        console.log(`Main sample name font: "${window.nameText.fontFamily()}"`);
+    } else {
+        console.log('Main sample nameText not initialized');
     }
-}, 1000);
+    
+    // Check all canvas names
+    if (window.canvasNameTexts && window.canvasNameTexts.length > 0) {
+        console.log(`Canvas names count: ${window.canvasNameTexts.length}`);
+        window.canvasNameTexts.forEach((nameText, i) => {
+            console.log(`Canvas name ${i}: "${nameText.text()}", Font: "${nameText.fontFamily()}"`);
+        });
+    } else {
+        console.log('No canvas names added yet');
+    }
+    
+    console.log('---------------------------');
+};
 
-// Initialize default font
-window.speakerDefaultFont = 'Poppins';
+// Add button click event to run debug
+document.addEventListener('DOMContentLoaded', function() {
+    // Add debug button to the UI
+    setTimeout(() => {
+        const container = document.querySelector('.glass-buttons');
+        if (container) {
+            const debugBtn = document.createElement('button');
+            debugBtn.textContent = 'Debug Fonts';
+            debugBtn.className = 'text-xs text-white bg-blue-600 px-3 py-1 rounded absolute bottom-2 right-2';
+            debugBtn.style.zIndex = '1000';
+            debugBtn.onclick = window.debugFonts;
+            document.body.appendChild(debugBtn);
+        }
+    }, 1000);
+});
 
-window.addNamesToCanvas = function(names) {
-            // Set the default font before adding names
-            const fontSelect = document.getElementById('speakerCertificateFontSelect');
-            if (fontSelect) {
-                window.speakerDefaultFont = fontSelect.value;
-            }
+// Function to immediately apply the selected font
+window.applySelectedFont = function() {
+    const fontSelect = document.getElementById('speakerCertificateFontSelect');
+    if (!fontSelect) {
+        console.warn('Font select element not found!');
+        return false;
+    }
+    
+    const selectedFont = fontSelect.value;
+    console.log(`Applying font "${selectedFont}" immediately`);
+    
+    // Update the main nameText from speaker-certificate.js
+    if (window.nameText) {
+        window.nameText.fontFamily(selectedFont);
+        window.nameText.offsetX(window.nameText.width() / 2);
+        window.nameText.offsetY(window.nameText.height() / 2);
+        window.layer.draw();
+        console.log(`Font applied to main sample name`);
+        return true;
+    }
+    
+    // Also update the local speakerNameText if it exists
+    if (speakerNameText) {
+        speakerNameText.fontFamily(selectedFont);
+        speakerNameText.offsetX(speakerNameText.width() / 2);
+        speakerNameText.offsetY(speakerNameText.height() / 2);
+        speakerLayer.draw();
+        console.log(`Font applied to speaker name text`);
+        return true;
+    }
+    
+    console.log('No text objects available to update font');
+    return false;
+};
+
+// Add special handling for direct select changes
+document.addEventListener('click', function(event) {
+    if (event.target && event.target.id === 'speakerCertificateFontSelect') {
+        console.log('Font select clicked, preparing for change');
+        
+        // Setup a one-time handler for immediate effect
+        const handleImmediateChange = function() {
+            console.log('Immediate change detected');
+            window.applySelectedFont();
             
-            // Call the original function
-            currentAddNamesToCanvas(names);
-            
-            // Update font of newly added text objects
-            setTimeout(() => {
-                if (window.speaker_stage) {
-                    const textObjects = window.speaker_stage.find('Text');
-                    textObjects.forEach(textObj => {
-                        if (textObj.name() !== 'instruction') {
-                            textObj.fontFamily(window.speakerDefaultFont || 'Poppins');
-                            textObj.offsetX(textObj.width() / 2);
-                            textObj.offsetY(textObj.height() / 2);
-                        }
-                    });
-                    
-                    if (window.speaker_layer) {
-                        window.speaker_layer.draw();
-                    }
-                }
-            }, 100);
+            // Remove the one-time handler
+            event.target.removeEventListener('change', handleImmediateChange);
         };
+        
+        event.target.addEventListener('change', handleImmediateChange);
+    }
+});
 
-// Initialize default font
-window.speakerDefaultFont = 'Poppins';
+// Add a MutationObserver to detect when the font select is added to DOM
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize MutationObserver
+    const observer = new MutationObserver(function(mutations) {
+        for(let mutation of mutations) {
+            if (mutation.type === 'childList') {
+                const fontSelect = document.getElementById('speakerCertificateFontSelect');
+                if (fontSelect && !fontSelect.hasAttribute('data-handler-attached')) {
+                    console.log('Font select detected in DOM via MutationObserver');
+                    fontSelect.setAttribute('data-handler-attached', 'true');
+                    
+                    // Set up the font change handler
+                    if (window.setupFontChangeHandler) {
+                        window.setupFontChangeHandler();
+                    }
+                    
+                    // Make sure the font select doesn't reset on blur (mobile fix)
+                    fontSelect.addEventListener('touchend', function(e) {
+                        console.log('Touch end on font select');
+                        setTimeout(() => window.applySelectedFont(), 100);
+                    });
+                }
+            }
+        }
+    });
+    
+    // Start observing the document body for DOM changes
+    observer.observe(document.body, { 
+        childList: true,
+        subtree: true
+    });
+    
+    console.log('MutationObserver set up for font select element');
+});

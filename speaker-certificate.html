@@ -6,10 +6,16 @@
   <title>Certificate Builder</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="./styles/styles.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Pinyon+Script&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/konva@9.2.0/konva.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script src="./script/certificate-generator.js"></script>
-  <script src="./script/speaker-certificate.js"></script>
 </head>
 <body class="flex flex-col md:flex-row min-h-screen bg-gradient-to-tr from-[#000000] from-35% to-[#00691c]">
   <!-- Sidebar -->
@@ -75,7 +81,9 @@
             <!-- Font Selection -->
             <div class="flex flex-col items-center gap-4">
               <label class="block font-bold text-lg text-white whitespace-nowrap">Certificate Font</label>
-              <select id="speakerCertificateFontSelect" class="p-2 border border-gray-300 bg-[#232b2b] text-white rounded-xl shadow-lg">
+              <select id="speakerCertificateFontSelect" class="p-2 border border-gray-300 bg-[#232b2b] text-white rounded-xl shadow-lg" 
+              onchange="if(window.changeCertificateFont) { window.changeCertificateFont(this.value); } else if(window.applySelectedFont) { window.applySelectedFont(); }"
+              onblur="if(window.changeCertificateFont) { window.changeCertificateFont(this.value); }">
                 <option value="Poppins" style="background-color: #232b2b;">Poppins</option>
                 <option value="Merriweather" style="background-color: #232b2b;">Merriweather</option>
                 <option value="Montserrat" style="background-color: #232b2b;">Montserrat</option>
@@ -83,6 +91,7 @@
                 <option value="Pinyon Script" style="background-color: #232b2b;">Pinyon Script</option>
                 <option value="Alex Brush" style="background-color: #232b2b;">Alex Brush</option>
               </select>
+              <button id="applyFontBtn" class="text-xs text-white bg-green-600 hover:bg-green-700 px-3 py-1 rounded" onclick="if(window.applySelectedFont) { window.applySelectedFont(); }" style="display: none;">Apply Font</button>
             </div>
             <!-- Signature Upload -->
             <div class="flex flex-col items-center gap-4">
@@ -230,7 +239,7 @@
     </div>
   </div>
 
-  <script type="module">
+  <script>
     const uploadBtn = document.getElementById('uploadBtn');
     const templateUpload = document.getElementById('templateUpload');
     const fileName = document.getElementById('fileName');
@@ -492,8 +501,33 @@
         infoModal.classList.add('hidden');
       });
     }
+
+    // Show the apply font button on mobile devices
+    document.addEventListener('DOMContentLoaded', function() {
+      // Simple mobile detection
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const applyFontBtn = document.getElementById('applyFontBtn');
+      
+      if (isMobile && applyFontBtn) {
+        applyFontBtn.style.display = 'block';
+      }
+      
+      // Extra handler for font select
+      const fontSelect = document.getElementById('speakerCertificateFontSelect');
+      if (fontSelect) {
+        fontSelect.addEventListener('change', function() {
+          console.log('Font select changed in inline handler');
+          // Force immediate update of font
+          setTimeout(function() {
+            if (window.applySelectedFont) {
+              window.applySelectedFont();
+            }
+          }, 50);
+        });
+      }
+    });
   </script>
-  <script src="./script/speaker-certificate.js" type="module"></script>
+  <script src="./script/speaker-certificate.js"></script>
   <script src="./script/speaker-certificate-builder.js"></script>
 </body>
 </html>

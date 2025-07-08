@@ -37,12 +37,17 @@ function initKonva(imageSrc) {
         });
         layer.add(bg);
 
+        // Get the selected font from the dropdown if available
+        const fontSelect = document.getElementById('speakerCertificateFontSelect');
+        const selectedFont = fontSelect ? fontSelect.value : 'Arial';
+        console.log(`Using font "${selectedFont}" for initial sample name text`);
+        
         nameText = new Konva.Text({
             text: 'SAMPLE NAME',
             x: width / 2,
             y: height / 2,
             fontSize: Math.max(18, Math.floor(height / 16)),
-            fontFamily: 'Arial',
+            fontFamily: selectedFont,
             fill: 'black',
             draggable: true,
             fontStyle: 'bold',
@@ -52,13 +57,26 @@ function initKonva(imageSrc) {
             shadowOpacity: 0.5,
         });
         
+        // Add a font change listener directly to the fontSelect element
+        if (fontSelect) {
+            console.log('Setting up font change listener in speaker-certificate.js');
+            fontSelect.addEventListener('change', function() {
+                const newFont = this.value;
+                console.log(`Font changed to "${newFont}" - updating sample name`);
+                nameText.fontFamily(newFont);
+                nameText.offsetX(nameText.width() / 2);
+                nameText.offsetY(nameText.height() / 2);
+                layer.draw();
+            });
+        }
+        
         // Remove the old signImage placeholder creation
         // signImage will be created when signatures are added
         
         // Create placeholder for signature image
         signImage = new Konva.Group({
             x: width / 2,
-            y: height * 0.8,
+            y: height * 0.9, // Lowered from 0.8 to 0.9 to position signatures further down
             draggable: true,
         });
         
@@ -444,7 +462,7 @@ window.applySignature = function(signatureData) {
     // Create a new signature group for this signature
     const signatureGroup = new Konva.Group({
         x: width / 2,
-        y: height * 0.8,
+        y: height * 0.9, // Lowered from 0.8 to 0.9 to position signatures further down
         draggable: true,
     });
     
@@ -976,7 +994,7 @@ async function createCertificateWithName(speakerName) {
             const signX = signImage.x() * scaleX - (signChild.offsetX() * scaleX);
             const signY = signImage.y() * scaleY - (signChild.offsetY() * scaleY);
             const signWidth = signChild.width() * scaleX;
-            const signHeight = signChild.height() * scaleY;
+            const signHeight = signChild.height() * scaleX;
             
             ctx.drawImage(
                 signImageObj,
@@ -995,7 +1013,7 @@ async function createCertificateWithName(speakerName) {
             const signX = sig.group.x() * scaleX - (signChild.offsetX() * scaleX);
             const signY = sig.group.y() * scaleY - (signChild.offsetY() * scaleY);
             const signWidth = signChild.width() * scaleX;
-            const signHeight = signChild.height() * scaleY;
+            const signHeight = signChild.height() * scaleX;
             
             ctx.drawImage(
                 sig.image,
@@ -1067,7 +1085,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Create initial signature group
     signImage = new Konva.Group({
         x: width / 2,
-        y: height * 0.8,
+        y: height * 0.9, // Lowered from 0.8 to 0.9 to position signatures further down
         draggable: true,
     });
     
@@ -1169,7 +1187,10 @@ let canvasNameTexts = [];
 
 // Function to add names to canvas
 window.addNamesToCanvas = function(names) {
+    console.log('addNamesToCanvas called with names:', names);
+    
     if (!stage || !layer) {
+        console.error('Stage or layer not initialized');
         alert('Please upload a certificate template first.');
         return;
     }
@@ -1187,19 +1208,22 @@ window.addNamesToCanvas = function(names) {
     const nameSpacing = Math.max(50, height * 0.08); // Space between names
     
     names.forEach((name, index) => {
+        console.log(`Adding name ${index}: ${name}`);
+        
+        // Use a more visible style for testing
         const nameTextObj = new Konva.Text({
             text: name,
             x: width / 2,
             y: startY + (index * nameSpacing),
-            fontSize: Math.max(16, Math.floor(height / 20)),
+            fontSize: Math.max(20, Math.floor(height / 16)),  // Larger font
             fontFamily: 'Arial',
-            fill: 'black',
+            fill: 'black',  // Changed from red to black for production
             draggable: true,
             fontStyle: 'bold',
             shadowColor: 'white',
-            shadowBlur: 2,
-            shadowOffset: { x: 1, y: 1 },
-            shadowOpacity: 0.5,
+            shadowBlur: 4,  // More visible shadow
+            shadowOffset: { x: 2, y: 2 },
+            shadowOpacity: 0.7,
         });
         
         // Center the text
@@ -1268,6 +1292,7 @@ window.addNamesToCanvas = function(names) {
     if (saveStatus) {
         saveStatus.textContent = `Added ${names.length} name(s) to canvas`;
         saveStatus.style.color = "#10b981";
+        console.log(`Added ${names.length} name(s) to canvas:`, canvasNameTexts);
         setTimeout(() => {
             saveStatus.textContent = "";
         }, 3000);
@@ -1538,4 +1563,42 @@ window.downloadPreviewCertificate = function() {
     document.body.appendChild(downloadLink);
     downloadLink.click();
     document.body.removeChild(downloadLink);
+};
+
+// Direct font change function that can be called from inline handlers
+window.changeCertificateFont = function(fontValue) {
+    console.log(`Direct font change called with: "${fontValue}"`);
+    
+    if (!fontValue && window.event && window.event.target) {
+        fontValue = window.event.target.value;
+        console.log(`Got font value from event target: "${fontValue}"`);
+    }
+    
+    if (!fontValue) {
+        const fontSelect = document.getElementById('speakerCertificateFontSelect');
+        if (fontSelect) {
+            fontValue = fontSelect.value;
+            console.log(`Got font value from select element: "${fontValue}"`);
+        }
+    }
+    
+    if (!fontValue) {
+        console.warn('No font value found to apply');
+        return false;
+    }
+    
+    // Update main name text
+    if (window.nameText) {
+        window.nameText.fontFamily(fontValue);
+        window.nameText.offsetX(window.nameText.width() / 2);
+        window.nameText.offsetY(window.nameText.height() / 2);
+        
+        if (window.layer) {
+            window.layer.draw();
+            console.log(`Applied font "${fontValue}" to main sample name`);
+            return true;
+        }
+    }
+    
+    return false;
 };
