@@ -66,15 +66,33 @@
         <label for="eventDescription" class="block text-base font-semibold mb-2">Event Description</label>
         <textarea id="eventDescription" class="w-full p-3 border border-gray-400 rounded-xl shadow-lg bg-transparent text-white placeholder-gray-400" placeholder="Describe the event..." rows="3"></textarea>
       </div>
-    
-    <h2 class="text-xl font-semibold mb-4 border-b border-gray-600 pb-2">Feedback Questions</h2>
-    <form id="questionForm" class="flex flex-col gap-6 overflow-y-auto max-h-[45vh] custom-scrollbar">
-      <!-- questions will appear here -->
-    </form>
-    <div class="flex justify-center mt-4">
+      <div class="flex justify-center mt-4">
       <button id="addQuestionBtn" type="button" class="border border-gray-400 rounded-full w-10 h-10 flex items-center justify-center hover:bg-gray-200 hover:text-black text-3xl bg-[#232b2b] text-[#3be382] transition">
         +
       </button>
+    </div>
+    <form id="questionForm" class="flex flex-col gap-6 overflow-y-auto max-h-[45vh] custom-scrollbar">
+      <!-- questions will appear here -->
+    </form>
+    <h2 class="text-xl font-semibold mb-4 border-b border-gray-600 pb-2">Feedback Questions</h2>
+    <div class="flex justify-between items-center mb-4">
+      <div class="flex items-center gap-20">
+          <div class="flex items-center gap-2">
+              <label for="certificateFontSelect" class="text-white text-sm">Certificate Font:</label>
+              <select id="certificateFontSelect" class="p-2 border border-gray-300 bg-[#232b2b] text-white rounded-xl shadow-lg">
+                  <option value="Poppins" style="background-color: #232b2b;">Poppins</option>
+                  <option value="Merriweather" style="background-color: #232b2b;">Merriweather</option>
+                  <option value="Montserrat" style="background-color: #232b2b;">Montserrat</option>
+                  <option value="Raleway" style="background-color: #232b2b;">Raleway</option>
+                  <option value="Pinyon Script" style="background-color: #232b2b;">Pinyon Script</option>
+                  <option value="Alex Brush" style="background-color: #232b2b;">Alex Brush</option>
+              </select>
+          </div>
+          <div class="flex items-center gap-2">
+              <input type="checkbox" id="excludeCertificateCheckbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+              <label for="excludeCertificateCheckbox" class="text-white text-sm">Exclude Certificate Download</label>
+          </div>
+      </div>
     </div>
     
     <div class="flex justify-center mt-8">
@@ -200,6 +218,9 @@
           return;
         }
 
+        const excludeCertCheckbox = document.getElementById('excludeCertificateCheckbox');
+        const fontSelect = document.getElementById('certificateFontSelect');
+
         const questionDivs = form.querySelectorAll('div');
         const questions = [];
 
@@ -225,11 +246,13 @@
           return;
         }
 
-        // collect event details
+        // collect event details including font selection
         const eventDetails = {
           description: eventDescriptionInput.value.trim(),
           questions: questions,
-          lastUpdated: new Date().toISOString()
+          lastUpdated: new Date().toISOString(),
+          excludeCertificate: excludeCertCheckbox ? excludeCertCheckbox.checked : false,
+          certificateFont: fontSelect ? fontSelect.value : 'Poppins'
         };
 
         // funciton to save to firebase
@@ -306,6 +329,18 @@
               // populate event details (only if elements exist)
               if (eventDescriptionInput) {
                 eventDescriptionInput.value = data.description || '';
+              }
+              
+              // Load exclude certificate setting
+              const excludeCertCheckbox = document.getElementById('excludeCertificateCheckbox');
+              if (data.excludeCertificate !== undefined && excludeCertCheckbox) {
+                excludeCertCheckbox.checked = data.excludeCertificate;
+              }
+              
+              // Load font selection
+              const fontSelect = document.getElementById('certificateFontSelect');
+              if (data.certificateFont && fontSelect) {
+                fontSelect.value = data.certificateFont;
               }
               
               // populate questions

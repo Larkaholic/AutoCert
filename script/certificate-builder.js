@@ -34,12 +34,15 @@ function initKonva(imageSrc) {
         });
         layer.add(bg);
 
+        // Get the selected font from localStorage or default to Poppins
+        const selectedFont = localStorage.getItem('selectedCertificateFont') || 'Poppins';
+
         nameText = new Konva.Text({
             text: 'SAMPLE NAME',
             x: width / 2,
             y: height / 2,
             fontSize: Math.max(18, Math.floor(height / 16)),
-            fontFamily: 'Poppins',
+            fontFamily: selectedFont,
             fill: 'black',
             draggable: true,
             fontStyle: 'bold',
@@ -134,13 +137,13 @@ function createCertificatePreview(sampleName = "John Doe") {
     const scaleX = displayWidth / editorWidth;
     const scaleY = displayHeight / editorHeight;
 
-    // Position and scale text properly
+    // Position and scale text properly with selected font
     const previewText = new Konva.Text({
         text: sampleName,
         x: nameText.x() * scaleX,
         y: nameText.y() * scaleY,
         fontSize: nameText.fontSize() * ((scaleX + scaleY) / 2),
-        fontFamily: nameText.fontFamily(),
+        fontFamily: nameText.fontFamily(), // This will now use the selected font
         fontStyle: nameText.fontStyle(),
         fill: nameText.fill(),
         shadowColor: nameText.shadowColor(),
@@ -231,28 +234,6 @@ document.getElementById('savePlacementBtn').addEventListener('click', async func
     
     const { width: containerWidth, height: containerHeight } = getResponsiveSize();
     
-    const placement = {
-        xPercent: nameText.x() / containerWidth,
-        yPercent: nameText.y() / containerHeight,
-        x: nameText.x(),
-        y: nameText.y(),
-        fontSize: nameText.fontSize(),
-        fontSizePercent: nameText.fontSize() / containerHeight,
-        fontFamily: nameText.fontFamily(),
-        fontStyle: nameText.fontStyle(),
-        fill: nameText.fill(),
-        width: nameText.width(),
-        height: nameText.height(),
-        offsetX: 1,
-        offsetY: 1,
-        editorWidth: containerWidth,
-        editorHeight: containerHeight,
-        imageWidth: actualImageWidth,
-        imageHeight: actualImageHeight,
-        scaleX: actualImageWidth / containerWidth,
-        scaleY: actualImageHeight / containerHeight
-    };
-    
     const params = new URLSearchParams(window.location.search);
     const eventName = params.get('event') || '';
     if (!eventName) {
@@ -261,6 +242,32 @@ document.getElementById('savePlacementBtn').addEventListener('click', async func
     }
     
     try {
+        // Get the selected font from Firebase
+        const doc = await firebase.firestore().collection("events").doc(eventName).get();
+        const selectedFont = doc.exists && doc.data().certificateFont ? doc.data().certificateFont : 'Poppins';
+        
+        const placement = {
+            xPercent: nameText.x() / containerWidth,
+            yPercent: nameText.y() / containerHeight,
+            x: nameText.x(),
+            y: nameText.y(),
+            fontSize: nameText.fontSize(),
+            fontSizePercent: nameText.fontSize() / containerHeight,
+            fontFamily: selectedFont,
+            fontStyle: nameText.fontStyle(),
+            fill: nameText.fill(),
+            width: nameText.width(),
+            height: nameText.height(),
+            offsetX: 1,
+            offsetY: 1,
+            editorWidth: containerWidth,
+            editorHeight: containerHeight,
+            imageWidth: actualImageWidth,
+            imageHeight: actualImageHeight,
+            scaleX: actualImageWidth / containerWidth,
+            scaleY: actualImageHeight / containerHeight
+        };
+        
         const expiresAt = calculateExpirationTime();
         
         await firebase.firestore().collection("events").doc(eventName).set({
@@ -271,13 +278,14 @@ document.getElementById('savePlacementBtn').addEventListener('click', async func
                     y: nameText.y() * (actualImageHeight / containerHeight),
                     centered: true,
                     fontSize: nameText.fontSize() * (actualImageHeight / containerHeight),
-                    fontFamily: nameText.fontFamily(),
+                    fontFamily: selectedFont,
                     fontStyle: nameText.fontStyle(),
                     fill: nameText.fill()
                 }
             },
             expiresAt: expiresAt
         }, { merge: true });
+        
         document.getElementById('saveStatus').textContent = "Placement saved successfully!";
         setTimeout(() => document.getElementById('saveStatus').textContent = "", 3000);
         
@@ -296,24 +304,41 @@ async function loadExistingPlacement() {
     
     try {
         const doc = await firebase.firestore().collection("events").doc(eventName).get();
-        if (doc.exists && doc.data().namePlacement && nameText) {
-            const placement = doc.data().namePlacement;
+        if (doc.exists) {
+            const data = doc.data();
             const { width, height } = getResponsiveSize();
             
-            nameText.x(placement.xPercent * width);
-            nameText.y(placement.yPercent * height);
-            nameText.fontSize(placement.fontSize || Math.floor(height / 16));
+            // Use selected font from form builder or default to Poppins
+            const selectedFont = data.certificateFont || 'Poppins';
             
-            if (placement.fontFamily) nameText.fontFamily(placement.fontFamily);
-            if (placement.fontStyle) nameText.fontStyle(placement.fontStyle);
-            if (placement.fill) nameText.fill(placement.fill);
+            // Store font in localStorage for use in initKonva
+            localStorage.setItem('selectedCertificateFont', selectedFont);
             
-            if (placement.offsetX) {
-                nameText.offsetX(nameText.width() * placement.offsetX);
-                nameText.offsetY(nameText.height() * placement.offsetY);
+            if (data.namePlacement && nameText) {
+                const placement = data.namePlacement;
+                
+                nameText.x(placement.xPercent * width);
+                nameText.y(placement.yPercent * height);
+                nameText.fontSize(placement.fontSize || Math.floor(height / 16));
+                nameText.fontFamily(selectedFont);
+                
+                if (placement.fontStyle) nameText.fontStyle(placement.fontStyle);
+                if (placement.fill) nameText.fill(placement.fill);
+                
+                if (placement.offsetX) {
+                    nameText.offsetX(nameText.width() * placement.offsetX);
+                    nameText.offsetY(nameText.height() * placement.offsetY);
+                }
+                
+                layer.draw();
+            } else if (nameText) {
+                // If no placement data exists, just update the font
+                nameText.fontFamily(selectedFont);
+                // Recalculate offsets after font change
+                nameText.offsetX(nameText.width() / 2);
+                nameText.offsetY(nameText.height() / 2);
+                layer.draw();
             }
-            
-            layer.draw();
         }
     } catch (error) {
         console.error("Error loading placement:", error);

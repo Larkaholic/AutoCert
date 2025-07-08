@@ -6,6 +6,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const eventTitleInput = document.getElementById('eventTitle');
   const saveBtn = document.getElementById('saveFormBtn');
   const output = document.getElementById('output');
+  const excludeCertCheckbox = document.getElementById('excludeCertificateCheckbox');
+  const fontSelect = document.getElementById('certificateFontSelect');
   
   let questionCount = 0;
   
@@ -73,9 +75,11 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    // save to Firebase
+    // save to Firebase with exclude certificate setting and font selection
     db.collection("events").doc(eventTitle).set({
-      questions: questions
+      questions: questions,
+      excludeCertificate: excludeCertCheckbox ? excludeCertCheckbox.checked : false,
+      certificateFont: fontSelect ? fontSelect.value : 'Poppins'
     }, { merge: true })
     .then(() => {
       window.location.href = `certificate-builder.html?event=${encodeURIComponent(eventTitle)}`;
@@ -98,6 +102,16 @@ document.addEventListener('DOMContentLoaded', function() {
         if (doc.exists) {
           const data = doc.data();
           const questions = data.questions || [];
+          
+          // Load exclude certificate setting
+          if (data.excludeCertificate !== undefined && excludeCertCheckbox) {
+            excludeCertCheckbox.checked = data.excludeCertificate;
+          }
+          
+          // Load font selection
+          if (data.certificateFont && fontSelect) {
+            fontSelect.value = data.certificateFont;
+          }
           
           questions.forEach(q => {
             questionCount++;

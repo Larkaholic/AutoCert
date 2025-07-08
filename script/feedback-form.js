@@ -389,3 +389,33 @@ document.addEventListener('DOMContentLoaded', function() {
 
     updateExpirationDisplay();
 });
+
+async function checkCertificateExclusion() {
+    const params = new URLSearchParams(window.location.search);
+    const eventName = params.get('event');
+    if (!eventName) return;
+    
+    try {
+        const doc = await firebase.firestore().collection("events").doc(eventName).get();
+        if (doc.exists) {
+            const data = doc.data();
+            const excludeCertificate = data.excludeCertificate || false;
+            
+            // Store the selected font and event data globally for certificate generation
+            window.selectedCertificateFont = data.certificateFont || 'Poppins';
+            window.eventData = data;
+            
+            // Hide certificate download section if excluded
+            const certificateSection = document.getElementById('certificateSection');
+            if (certificateSection) {
+                if (excludeCertificate) {
+                    certificateSection.style.display = 'none';
+                } else {
+                    certificateSection.style.display = 'block';
+                }
+            }
+        }
+    } catch (error) {
+        console.error("Error checking certificate exclusion:", error);
+    }
+}

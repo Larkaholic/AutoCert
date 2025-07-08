@@ -104,12 +104,15 @@
               console.log("Calculated position from editor placement", { nameX, nameY, fontSize });
             }
             
+            // Get the selected font from the event data
+            const selectedFont = options.certificateFont || namePlacement.fontFamily || 'Poppins';
+            
             const nameText = new Konva.Text({
               text: participantName,
               x: nameX,
               y: nameY,
               fontSize: fontSize,
-              fontFamily: namePlacement.fontFamily || 'Poppins',
+              fontFamily: selectedFont,
               fontStyle: namePlacement.fontStyle || 'bold',
               fill: namePlacement.fill || 'black',
               shadowColor: namePlacement.shadowColor || 'white',
@@ -305,12 +308,15 @@
               console.log("Calculated position from editor placement", { nameX, nameY, fontSize });
             }
             
+            // Get the selected font from the event data
+            const selectedFont = options.certificateFont || namePlacement.fontFamily || 'Poppins';
+            
             const nameText = new Konva.Text({
               text: participantName,
               x: nameX,
               y: nameY,
               fontSize: fontSize,
-              fontFamily: namePlacement.fontFamily || 'Poppins',
+              fontFamily: selectedFont,
               fontStyle: namePlacement.fontStyle || 'bold',
               fill: namePlacement.fill || 'black',
               shadowColor: namePlacement.shadowColor || 'white',

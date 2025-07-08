@@ -526,6 +526,48 @@
       }
     });
     
+    // Update the certificate generation call to include font
+    async function generateCertificate(participantName) {
+        try {
+            const params = new URLSearchParams(window.location.search);
+            const eventName = params.get('event');
+            
+            if (!eventName) {
+                throw new Error('Event name is required');
+            }
+            
+            // Get event data including font selection
+            const eventDoc = await firebase.firestore().collection("events").doc(eventName).get();
+            if (!eventDoc.exists) {
+                throw new Error('Event not found');
+            }
+            
+            const eventData = eventDoc.data();
+            const certificateFont = eventData.certificateFont || 'Poppins';
+            
+            // Get certificate template URL and placement data
+            const certificateUrl = eventData.certificateUrl;
+            const namePlacement = eventData.namePlacement;
+            
+            if (!certificateUrl || !namePlacement) {
+                throw new Error('Certificate template or placement data not found');
+            }
+            
+            // Generate certificate with font information
+            const certificateDataURL = await CertificateGenerator.generate({
+                certificateUrl: certificateUrl,
+                namePlacement: namePlacement,
+                participantName: participantName,
+                certificateFont: certificateFont
+            });
+            
+            return certificateDataURL;
+        } catch (error) {
+            console.error('Error generating certificate:', error);
+            throw error;
+        }
+    }
+
     // Initialize when DOM is loaded
     document.addEventListener('DOMContentLoaded', function() {
       // Re-assign form variable to ensure it's available after DOM is loaded
