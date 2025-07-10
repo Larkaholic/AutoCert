@@ -4,7 +4,7 @@
     /**
      * Generate a certificate with the participant's name
      * 
-     * @param {Object} options - configuration options
+     * @param {Object} options
      * @param {string} options.certificateUrl - URL to the certificate template image
      * @param {Object} options.namePlacement - name placement data from Firestore
      * @param {string} options.participantName - the participant's name to place on the certificate
@@ -12,7 +12,6 @@
      * @returns {Promise<string>} - data URL of the generated certificate
      */
     static async generate(options) {
-      console.log("CertificateGenerator.generate called with:", options);
       
       if (!options || !options.certificateUrl || !options.namePlacement || !options.participantName) {
         console.error("Missing required parameters for certificate generation", options);
@@ -44,7 +43,6 @@
         throw new Error(`Certificate container not found: ${containerId || "temporary container"}`);
       }
       
-      // load certificate image
       return new Promise((resolve, reject) => {
         const certificateImg = new Image();
         certificateImg.crossOrigin = "Anonymous";
@@ -72,9 +70,7 @@
             });
             layer.add(background);
             
-            console.log("Certificate background added");
             
-            // Calculate scaling factors between editor and final image
             const editorWidth = namePlacement.editorWidth || 800;
             const editorHeight = namePlacement.editorHeight || 600;
             const imageWidth = certificateImg.width;
@@ -85,26 +81,21 @@
             
             console.log("Scaling factors:", { scaleX, scaleY, editorWidth, editorHeight, imageWidth, imageHeight });
             
-            // add participant's name using placement data with accurate scaling
             let nameX, nameY, fontSize;
             
-            // determine position from placement data
             if (namePlacement.certificateGeneration?.namePosition) {
-              // use explicit position
               const pos = namePlacement.certificateGeneration.namePosition;
               nameX = pos.x;
               nameY = pos.y;
               fontSize = pos.fontSize;
               console.log("Using explicit namePosition from certificateGeneration", { nameX, nameY, fontSize });
             } else {
-              // calculate from editor placement with proper scaling
               nameX = namePlacement.x * scaleX;
               nameY = namePlacement.y * scaleY;
               fontSize = namePlacement.fontSize * scaleY;
               console.log("Calculated position from editor placement", { nameX, nameY, fontSize });
             }
             
-            // Get the selected font from the event data
             const selectedFont = options.certificateFont || namePlacement.fontFamily || 'Poppins';
             
             const nameText = new Konva.Text({
@@ -121,7 +112,6 @@
               shadowOpacity: namePlacement.shadowOpacity || 0.5,
             });
             
-            // center the text at the position (same as editor)
             nameText.offsetX(nameText.width() / 2);
             nameText.offsetY(nameText.height() / 2);
             
@@ -135,7 +125,6 @@
             layer.add(nameText);
             layer.draw();
             
-            // generate data URL
             const dataURL = stage.toDataURL({
               mimeType: 'image/jpeg',
               quality: 0.9,
@@ -144,7 +133,6 @@
             
             console.log("Certificate generated successfully");
             
-            // clean up if using temp container
             if (!containerId) {
               document.body.removeChild(tempContainer);
             }
@@ -153,7 +141,6 @@
           } catch (error) {
             console.error("Error generating certificate:", error);
             
-            // clean up if using temp container
             if (!containerId) {
               document.body.removeChild(tempContainer);
             }
@@ -165,7 +152,6 @@
         certificateImg.onerror = function(e) {
           console.error("Failed to load certificate image:", certificateUrl, e);
           
-          // clean up if using temp container
           if (!containerId) {
             document.body.removeChild(tempContainer);
           }
@@ -173,7 +159,6 @@
           reject(new Error("Failed to load certificate template image"));
         };
         
-        // load the image
         console.log("Loading certificate image from URL:", certificateUrl);
         certificateImg.src = certificateUrl;
       });
@@ -249,7 +234,6 @@
         throw new Error(`Certificate container not found: ${containerId || "temporary container"}`);
       }
       
-      // load certificate image
       return new Promise((resolve, reject) => {
         const certificateImg = new Image();
         certificateImg.crossOrigin = "Anonymous";
@@ -279,7 +263,6 @@
             
             console.log("Certificate background added");
             
-            // Calculate scaling factors between editor and final image
             const editorWidth = namePlacement.editorWidth;
             const editorHeight = namePlacement.editorHeight;
             const imageWidth = certificateImg.width;
@@ -290,25 +273,21 @@
             
             console.log("Scaling factors:", { scaleX, scaleY, editorWidth, editorHeight, imageWidth, imageHeight });
             
-            // Add participant's name with accurate placement
             let nameX, nameY, fontSize;
             
             if (namePlacement.certificateGeneration?.namePosition) {
-              // Use explicit position from certificateGeneration
               const pos = namePlacement.certificateGeneration.namePosition;
               nameX = pos.x;
               nameY = pos.y;
               fontSize = pos.fontSize;
               console.log("Using explicit namePosition from certificateGeneration", { nameX, nameY, fontSize });
             } else {
-              // Calculate from editor placement with proper scaling
               nameX = namePlacement.x * scaleX;
               nameY = namePlacement.y * scaleY;
               fontSize = namePlacement.fontSize * scaleY;
               console.log("Calculated position from editor placement", { nameX, nameY, fontSize });
             }
             
-            // Get the selected font from the event data
             const selectedFont = options.certificateFont || namePlacement.fontFamily || 'Poppins';
             
             const nameText = new Konva.Text({
@@ -325,7 +304,6 @@
               shadowOpacity: namePlacement.shadowOpacity || 0.5,
             });
             
-            // Center the text at the position (same as editor)
             nameText.offsetX(nameText.width() / 2);
             nameText.offsetY(nameText.height() / 2);
             
@@ -338,20 +316,17 @@
             
             layer.add(nameText);
             
-            // Add signature if available with accurate placement
             if (signatureImage && namePlacement.signaturePlacement) {
               const signPlacement = namePlacement.signaturePlacement;
               let signX, signY, signWidth, signHeight, signatureKonva;
               
               if (namePlacement.certificateGeneration?.signaturePosition) {
-                // Use explicit position from certificateGeneration
                 const pos = namePlacement.certificateGeneration.signaturePosition;
                 signX = pos.x;
                 signY = pos.y;
                 signWidth = pos.width;
                 signHeight = pos.height;
                 
-                // Create the signature with the explicit position and apply offset
                 signatureKonva = new Konva.Image({
                   image: signatureImage,
                   x: signX,
@@ -367,13 +342,11 @@
                   offsetX: pos.offsetX, offsetY: pos.offsetY 
                 });
               } else {
-                // Calculate from editor placement with proper scaling (same as name)
                 signX = signPlacement.x * scaleX;
                 signY = signPlacement.y * scaleY;
                 signWidth = signPlacement.width * scaleX;
                 signHeight = signPlacement.height * scaleY;
                 
-                // Create the signature with calculated position and apply offset
                 signatureKonva = new Konva.Image({
                   image: signatureImage,
                   x: signX,
@@ -404,7 +377,6 @@
             
             layer.draw();
             
-            // Generate data URL
             const dataURL = stage.toDataURL({
               mimeType: 'image/jpeg',
               quality: 0.9,
@@ -413,7 +385,6 @@
             
             console.log("Certificate with signature generated successfully");
             
-            // Clean up if using temp container
             if (!containerId) {
               document.body.removeChild(tempContainer);
             }
@@ -422,7 +393,6 @@
           } catch (error) {
             console.error("Error generating certificate with signature:", error);
             
-            // Clean up if using temp container
             if (!containerId) {
               document.body.removeChild(tempContainer);
             }
@@ -434,7 +404,6 @@
         certificateImg.onerror = function(e) {
           console.error("Failed to load certificate image:", certificateUrl, e);
           
-          // Clean up if using temp container
           if (!containerId) {
             document.body.removeChild(tempContainer);
           }
@@ -442,7 +411,6 @@
           reject(new Error("Failed to load certificate template image"));
         };
         
-        // Load the image
         console.log("Loading certificate image from URL:", certificateUrl);
         certificateImg.src = certificateUrl;
       });
