@@ -34,7 +34,6 @@ function initKonva(imageSrc) {
         });
         layer.add(bg);
 
-        // Get the selected font from localStorage or default to Poppins
         const selectedFont = localStorage.getItem('selectedCertificateFont') || 'Poppins';
 
         nameText = new Konva.Text({
@@ -51,7 +50,6 @@ function initKonva(imageSrc) {
             shadowOffset: { x: 1, y: 1 },
             shadowOpacity: 0.5,
         });
-        // recalculate offset after setting text and font size
         nameText.offsetX(nameText.width() / 2);
         nameText.offsetY(nameText.height() / 2);
 
@@ -61,7 +59,6 @@ function initKonva(imageSrc) {
             if (e.evt.deltaY < 0) fontSize = Math.min(100, fontSize + 2);
             else fontSize = Math.max(10, fontSize - 2);
             nameText.fontSize(fontSize);
-            // recalculate offset after font size change
             nameText.offsetX(nameText.width() / 2);
             nameText.offsetY(nameText.height() / 2);
             layer.batchDraw();
@@ -97,11 +94,9 @@ function createCertificatePreview(sampleName = "John Doe") {
     }
 
     const previewContainer = document.getElementById('previewContainer');
-    // Use the actual rendered size of the preview container
     const containerWidth = previewContainer.offsetWidth;
     const containerHeight = previewContainer.offsetHeight;
 
-    // Calculate scale to fit image into container while maintaining aspect ratio
     const scale = Math.min(
         containerWidth / actualImageWidth,
         containerHeight / actualImageHeight
@@ -109,12 +104,10 @@ function createCertificatePreview(sampleName = "John Doe") {
     const displayWidth = actualImageWidth * scale;
     const displayHeight = actualImageHeight * scale;
 
-    // Center the image in the container
     previewContainer.style.display = 'flex';
     previewContainer.style.alignItems = 'center';
     previewContainer.style.justifyContent = 'center';
 
-    // Create a container with the scaled image dimensions
     const previewStage = new Konva.Stage({
         container: 'previewContainer',
         width: displayWidth,
@@ -124,7 +117,6 @@ function createCertificatePreview(sampleName = "John Doe") {
     const previewLayer = new Konva.Layer();
     previewStage.add(previewLayer);
 
-    // Draw the background image at the scaled size
     const previewBg = new Konva.Image({
         image: bgImageObj,
         width: displayWidth,
@@ -132,18 +124,16 @@ function createCertificatePreview(sampleName = "John Doe") {
     });
     previewLayer.add(previewBg);
 
-    // Calculate the scale between editor and preview image size
     const { width: editorWidth, height: editorHeight } = getResponsiveSize();
     const scaleX = displayWidth / editorWidth;
     const scaleY = displayHeight / editorHeight;
 
-    // Position and scale text properly with selected font
     const previewText = new Konva.Text({
         text: sampleName,
         x: nameText.x() * scaleX,
         y: nameText.y() * scaleY,
         fontSize: nameText.fontSize() * ((scaleX + scaleY) / 2),
-        fontFamily: nameText.fontFamily(), // This will now use the selected font
+        fontFamily: nameText.fontFamily(),
         fontStyle: nameText.fontStyle(),
         fill: nameText.fill(),
         shadowColor: nameText.shadowColor(),
@@ -171,12 +161,10 @@ document.getElementById('previewCertBtn').addEventListener('click', function() {
     const previewModal = document.getElementById('previewModal');
     const previewContainer = document.getElementById('previewContainer');
 
-    // Clear previous preview
     previewContainer.innerHTML = '';
 
-    // Make the container wide and not too tall for a landscape certificate
-    previewContainer.style.width = '90vw';      // Use 90% of viewport width
-    previewContainer.style.height = '60vh';     // Use 60% of viewport height
+    previewContainer.style.width = '90vw';
+    previewContainer.style.height = '60vh';
     previewContainer.style.maxWidth = '';
     previewContainer.style.maxHeight = '';
     previewContainer.style.objectFit = '';
@@ -184,10 +172,8 @@ document.getElementById('previewCertBtn').addEventListener('click', function() {
     previewContainer.style.alignItems = 'center';
     previewContainer.style.justifyContent = 'center';
 
-    // Generate the preview (will fit to container)
     createCertificatePreview();
 
-    // Show the modal
     previewModal.classList.remove('hidden');
 });
 
@@ -242,7 +228,6 @@ document.getElementById('savePlacementBtn').addEventListener('click', async func
     }
     
     try {
-        // Get the selected font from Firebase
         const doc = await firebase.firestore().collection("events").doc(eventName).get();
         const selectedFont = doc.exists && doc.data().certificateFont ? doc.data().certificateFont : 'Poppins';
         
@@ -308,10 +293,8 @@ async function loadExistingPlacement() {
             const data = doc.data();
             const { width, height } = getResponsiveSize();
             
-            // Use selected font from form builder or default to Poppins
             const selectedFont = data.certificateFont || 'Poppins';
             
-            // Store font in localStorage for use in initKonva
             localStorage.setItem('selectedCertificateFont', selectedFont);
             
             if (data.namePlacement && nameText) {
@@ -332,9 +315,7 @@ async function loadExistingPlacement() {
                 
                 layer.draw();
             } else if (nameText) {
-                // If no placement data exists, just update the font
                 nameText.fontFamily(selectedFont);
-                // Recalculate offsets after font change
                 nameText.offsetX(nameText.width() / 2);
                 nameText.offsetY(nameText.height() / 2);
                 layer.draw();
@@ -373,7 +354,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 document.addEventListener('DOMContentLoaded', function() {
-    // initialize with a blank stage
     const { width, height } = getResponsiveSize();
     stage = new Konva.Stage({
         container: 'konvaContainer',
@@ -383,7 +363,6 @@ document.addEventListener('DOMContentLoaded', function() {
     layer = new Konva.Layer();
     stage.add(layer);
     
-    // draw text indicating to upload an image
     const instructionText = new Konva.Text({
         text: 'Upload a certificate template\nto begin',
         x: width / 2,
