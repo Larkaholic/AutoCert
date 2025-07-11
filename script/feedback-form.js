@@ -358,7 +358,6 @@ document.addEventListener('DOMContentLoaded', function() {
     layer = new Konva.Layer();
     stage.add(layer);
     
-    // draw text indicating to upload an image
     const instructionText = new Konva.Text({
         text: 'Upload a certificate template\nto begin',
         x: width / 2,
@@ -401,11 +400,9 @@ async function checkCertificateExclusion() {
             const data = doc.data();
             const excludeCertificate = data.excludeCertificate || false;
             
-            // Store the selected font and event data globally for certificate generation
             window.selectedCertificateFont = data.certificateFont || 'Poppins';
             window.eventData = data;
             
-            // Hide certificate download section if excluded
             const certificateSection = document.getElementById('certificateSection');
             if (certificateSection) {
                 if (excludeCertificate) {
