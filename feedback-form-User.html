@@ -521,7 +521,7 @@
         });
         
         // Download the certificate
-        window.CertificateGenerator.download(certificateDataURL, `${eventName}-certificate.jpg`);
+        await window.CertificateGenerator.download(certificateDataURL, `${eventName}-certificate.jpg`);
         
         certStatus.textContent = "Certificate downloaded!";
         downloadCertBtn.textContent = "Download Again";

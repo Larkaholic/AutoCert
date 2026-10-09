@@ -170,13 +170,46 @@
      * @param {string} dataURL - data URL of the certificate to download
      * @param {string} filename - filename for the download
      */
-    static download(dataURL, filename = 'certificate.jpg') {
+    static async download(dataURL, filename = 'certificate.jpg') {
       if (!dataURL) {
         console.error("Cannot download certificate: No data URL provided");
         return;
       }
       
       console.log("Downloading certificate as:", filename);
+
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+      if (isIOS) {
+        try {
+          const [header, encodedData] = dataURL.split(',');
+          const byteString = atob(encodedData);
+          const bytes = new Uint8Array(byteString.length);
+          for (let index = 0; index < byteString.length; index++) {
+            bytes[index] = byteString.charCodeAt(index);
+          }
+          const mimeType = header.match(/data:(.*?);base64/)?.[1] || 'image/jpeg';
+          const blob = new Blob([bytes], { type: mimeType });
+          const file = new File([blob], filename, { type: blob.type || 'image/jpeg' });
+
+          if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+            await navigator.share({
+              files: [file],
+              title: 'Certificate',
+            });
+            return;
+          }
+        } catch (error) {
+          if (error.name === 'AbortError') return;
+          console.error("Unable to share certificate on iOS:", error);
+        }
+
+        // iOS Safari does not consistently support the download attribute.
+        // Opening the image lets the user save it from Safari's share menu.
+        const previewWindow = window.open(dataURL, '_blank');
+        if (previewWindow) return;
+      }
       
       const link = document.createElement('a');
       link.href = dataURL;

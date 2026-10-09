@@ -181,22 +181,30 @@ document.getElementById('closePreviewBtn').addEventListener('click', function() 
     document.getElementById('previewModal').classList.add('hidden');
 });
 
-document.getElementById('downloadCertBtn').addEventListener('click', function() {
-    const previewStage = createCertificatePreview("John Doe");
-    if (!previewStage) return;
-    
-    const dataURL = previewStage.toDataURL({
-        mimeType: "image/jpeg", 
-        quality: 0.9,
-        pixelRatio: 2
-    });
-    
-    const downloadLink = document.createElement('a');
-    downloadLink.href = dataURL;
-    downloadLink.download = 'sample-certificate.jpg';
-    document.body.appendChild(downloadLink);
-    downloadLink.click();
-    document.body.removeChild(downloadLink);
+document.getElementById('downloadCertBtn').addEventListener('click', async function() {
+    const downloadButton = this;
+    const originalContent = downloadButton.innerHTML;
+    downloadButton.disabled = true;
+    downloadButton.innerHTML = `
+        <span class="inline-block w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin" aria-hidden="true"></span>
+        Preparing...
+    `;
+
+    try {
+        const previewStage = createCertificatePreview("John Doe");
+        if (!previewStage) return;
+
+        const dataURL = previewStage.toDataURL({
+            mimeType: "image/jpeg",
+            quality: 0.9,
+            pixelRatio: 2
+        });
+
+        await window.CertificateGenerator.download(dataURL, 'sample-certificate.jpg');
+    } finally {
+        downloadButton.disabled = false;
+        downloadButton.innerHTML = originalContent;
+    }
 });
 
 function updateExpirationDisplay() {
